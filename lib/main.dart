@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
         title: 'Get the Memo',
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         ),
         home: HomePage(),
       ),

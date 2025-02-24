@@ -1,5 +1,5 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import 'package:get_the_memo/models/meeting.dart';
@@ -17,14 +17,16 @@ class DatabaseService {
   static const String columnId = 'id';
   static const String columnTitle = 'title';
   static const String columnDescription = 'description';
-  static const String columnCreatedAt = 'created_at';
-  static const String columnAudioPath = 'audio_path';
+  static const String columnCreatedAt = 'createdAt';
+  static const String columnAudioPath = 'audioUrl';
   static const String columnTranscription = 'transcription';
 
   static Future<void> init() async {
     // Get the application documents directory
-    final appDir = await getApplicationDocumentsDirectory();
-    final dbPath = path.join(appDir.path, _databaseName);
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    final appDir = await getDatabasesPath();
+    final dbPath = path.join(appDir, _databaseName);
     
     // Open/create database
     db = await openDatabase(
@@ -40,9 +42,9 @@ class DatabaseService {
       CREATE TABLE $tableMeetings (
         $columnId TEXT PRIMARY KEY,
         $columnTitle TEXT NOT NULL,
-        $columnDescription TEXT,
+        $columnDescription TEXT NOT NULL,
         $columnCreatedAt TEXT NOT NULL,
-        $columnAudioPath TEXT,
+        $columnAudioPath TEXT NOT NULL,
         $columnTranscription TEXT
       )
     ''');

@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/services/audio_service.dart';
+import 'package:get_the_memo/services/database_service.dart';
 
 class RecordViewModel extends ChangeNotifier {
   RecordingState _state = RecordingState.idle;
   String? _currentFileName;
-  
   RecordingState get state => _state;
+
+  RecordViewModel() {
+    DatabaseService.init();
+  }
+
 
   // Toggle recording state and handle audio operations
   Future<void> toggleRecording() async {
@@ -42,6 +48,21 @@ class RecordViewModel extends ChangeNotifier {
         if (path == null) {
           throw AudioServiceException('No recording path returned');
         }
+        Meeting meeting = Meeting(
+          id: _currentFileName!,
+          title: 'New Meeting',
+          description: 'Description',
+          transcription: "",
+          createdAt: DateTime.now(),
+          audioUrl: path,
+        );
+        await DatabaseService.insertMeeting(meeting);
+
+        final meetings = await DatabaseService.getMeetings();
+        print('All meetings in database:');
+        meetings.forEach((meeting) {
+          print('Meeting ID: ${meeting.id}, Audio Path: ${meeting.audioUrl}');
+        });
       }
     } catch (e) {
       print('Error saving recording: $e');

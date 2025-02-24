@@ -2,9 +2,14 @@ import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/pages/history_page.dart';
 import 'package:get_the_memo/pages/record_page.dart';
+import 'package:get_the_memo/services/database_service.dart';
 import 'package:provider/provider.dart';
 
-void main() {
+//flutter emulators --launch Pixel_3a_API_34_extension_level_7_x86_64
+
+void main() async {
+  
+  await DatabaseService.init();
   runApp(MyApp());
 }
 

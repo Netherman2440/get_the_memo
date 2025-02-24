@@ -5,7 +5,7 @@ class Meeting {
   final DateTime createdAt;
   final String audioUrl;
   String? transcription;
-
+  
   Meeting({
     required this.id, 
     required this.title,
@@ -33,4 +33,14 @@ class Meeting {
     transcription: json['transcription'],
   );
 }
+
+enum MeetingStatus {
+  none,
+  recording,
+  transcription,
+  tasks,
+  done,
+}
+
+
 

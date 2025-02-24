@@ -1,19 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:get_the_memo/services/database_service.dart';
+import 'package:get_the_memo/models/meeting.dart';
+import 'package:get_the_memo/view_models/history_view_model.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('History')),
-      body: ListView.builder(
-        
-        itemBuilder: (context, index) {
-          return HistoryItem(
-            title: 'Item $index',
-            date: 'Date $index',
-            duration: 'Duration $index'
-          );
-        },
+    return ChangeNotifierProvider(
+      create: (_) => HistoryViewModel()..loadMeetings(),
+      child: Scaffold(
+        appBar: AppBar(title: Text('History')),
+        body: Consumer<HistoryViewModel>(
+          builder: (context, viewModel, child) {
+            if (viewModel.isLoading) {
+              return Center(child: CircularProgressIndicator());
+            }
+
+            if (viewModel.error != null) {
+              return Center(child: Text(viewModel.error!));
+            }
+
+            return ListView.builder(
+              itemCount: viewModel.meetings.length,
+              itemBuilder: (context, index) {
+                final meeting = viewModel.meetings[index];
+                return HistoryItem(
+                  title: meeting.title,
+                  date: meeting.createdAt,
+                  duration: '00:00',
+                  transcription: meeting.transcription ?? '',
+                  meetingId: meeting.id,
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -22,19 +45,34 @@ class HistoryPage extends StatelessWidget {
 
 class HistoryItem extends StatelessWidget {
   final String title;
-  final String date;
+  final DateTime date;
   final String duration;
   final String transcription;
+  final String meetingId;
 
   HistoryItem({
     required this.title, 
     required this.date, 
     required this.duration,
+    required this.meetingId,
     this.transcription = '',
   });
 
+  String _formatDateTime(DateTime dateTime) {
+    // Format date as HH:mm DD-MM-YYYY
+    return '${dateTime.hour.toString().padLeft(2, '0')}:'
+           '${dateTime.minute.toString().padLeft(2, '0')} '
+           '${dateTime.day.toString().padLeft(2, '0')}-'
+           '${dateTime.month.toString().padLeft(2, '0')}-'
+           '${dateTime.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final viewModel = context.watch<HistoryViewModel>();
+    final bool isPlaying = viewModel.isPlaying && viewModel.currentPlayingId == meetingId;
+    final meeting = viewModel.meetings.firstWhere((m) => m.id == meetingId);
+    
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       color: Theme.of(context).colorScheme.surfaceVariant,
@@ -48,7 +86,7 @@ class HistoryItem extends StatelessWidget {
               ),
             ),
             subtitle: Text(
-              '$date | $duration',
+              '${_formatDateTime(date)} | $duration',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
               ),
@@ -59,13 +97,16 @@ class HistoryItem extends StatelessWidget {
             alignment: MainAxisAlignment.spaceEvenly,
             children: [
               FilledButton.icon(
-                icon: Icon(Icons.send),
-                label: Text('Send'),
-                onPressed: () {
-                  // Add send functionality
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Sending...')),
-                  );
+                icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
+                label: Text(isPlaying ? 'Stop' : 'Play'),
+                onPressed: () async {
+                  if (meeting.audioUrl != null) {
+                    viewModel.playAudio(meetingId);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('No audio file available')),
+                    );
+                  }
                 },
               ),
               FilledButton.icon(
@@ -76,6 +117,10 @@ class HistoryItem extends StatelessWidget {
                   foregroundColor: Theme.of(context).colorScheme.onSecondary,
                 ),
                 onPressed: () {
+                  // Create controllers outside the dialog
+                  final titleController = TextEditingController(text: meeting.title);
+                  final transcriptionController = TextEditingController(text: meeting.transcription);
+
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -87,7 +132,7 @@ class HistoryItem extends StatelessWidget {
                           children: [
                             Text('Title:', style: Theme.of(context).textTheme.titleSmall),
                             TextField(
-                              controller: TextEditingController(text: title),
+                              controller: titleController,
                               decoration: InputDecoration(
                                 hintText: 'Enter title',
                                 border: OutlineInputBorder(),
@@ -96,7 +141,7 @@ class HistoryItem extends StatelessWidget {
                             SizedBox(height: 16),
                             Text('Transcription:', style: Theme.of(context).textTheme.titleSmall),
                             TextField(
-                              controller: TextEditingController(text: transcription),
+                              controller: transcriptionController,
                               maxLines: 5,
                               decoration: InputDecoration(
                                 hintText: 'Enter transcription',
@@ -113,6 +158,21 @@ class HistoryItem extends StatelessWidget {
                         ),
                         FilledButton(
                           onPressed: () {
+                            
+                            final updatedMeeting = Meeting(
+                              id: meetingId,
+                              title: titleController.text,
+                              transcription: transcriptionController.text,
+                              createdAt: date,
+                              audioUrl: meeting.audioUrl,
+                              description: meeting.description,
+                            );
+
+                            print('Updated meeting object:');
+                            print('Title: ${updatedMeeting.title}');
+                            print('Transcription: ${updatedMeeting.transcription}');
+                            
+                            viewModel.saveEditedMeeting(updatedMeeting);
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Changes saved')),
@@ -125,7 +185,7 @@ class HistoryItem extends StatelessWidget {
                   );
                 },
               ),
-               FilledButton.icon(
+              FilledButton.icon(
                 icon: Icon(Icons.delete),
                 label: Text('Delete'),
                 style: FilledButton.styleFrom(
@@ -133,7 +193,6 @@ class HistoryItem extends StatelessWidget {
                   foregroundColor: Theme.of(context).colorScheme.onError,
                 ),
                 onPressed: () {
-                  // Add delete functionality
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
@@ -146,6 +205,7 @@ class HistoryItem extends StatelessWidget {
                         ),
                         FilledButton(
                           onPressed: () {
+                            viewModel.deleteMeeting(meetingId);
                             Navigator.pop(context);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text('Item deleted')),

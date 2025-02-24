@@ -5,6 +5,7 @@ class Meeting {
   final DateTime createdAt;
   final String audioUrl;
   String? transcription;
+  int? duration;
   
   Meeting({
     required this.id, 
@@ -13,6 +14,7 @@ class Meeting {
     required this.createdAt,
     required this.audioUrl,
     this.transcription,
+    this.duration,
   });
 
   Map<String, dynamic> toJson() => {
@@ -22,6 +24,7 @@ class Meeting {
     'createdAt': createdAt.toIso8601String(),
     'audioUrl': audioUrl,
     'transcription': transcription,
+    'duration': duration,
   };
   
   static Meeting fromJson(Map<String, dynamic> json) => Meeting(
@@ -31,6 +34,7 @@ class Meeting {
     createdAt: DateTime.parse(json['createdAt']),
     audioUrl: json['audioUrl'],
     transcription: json['transcription'],
+    duration: json['duration'],
   );
 }
 

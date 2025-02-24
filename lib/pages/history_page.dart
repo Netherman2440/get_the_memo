@@ -29,7 +29,7 @@ class HistoryPage extends StatelessWidget {
                 return HistoryItem(
                   title: meeting.title,
                   date: meeting.createdAt,
-                  duration: '00:00',
+                  duration: _formatDuration(meeting.duration),
                   transcription: meeting.transcription ?? '',
                   meetingId: meeting.id,
                 );
@@ -39,6 +39,14 @@ class HistoryPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDuration(int? seconds) {
+    if (seconds == null) return '00:00';
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    return '${twoDigits(minutes)}:${twoDigits(remainingSeconds)}';
   }
 }
 
@@ -86,7 +94,7 @@ class HistoryItem extends StatelessWidget {
               ),
             ),
             subtitle: Text(
-              '${_formatDateTime(date)} | $duration',
+              '${_formatDateTime(date)} | ${_formatDuration(meeting.duration)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
               ),
@@ -227,5 +235,13 @@ class HistoryItem extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDuration(int? seconds) {
+    if (seconds == null) return '00:00';
+    int minutes = seconds ~/ 60;
+    int remainingSeconds = seconds % 60;
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    return '${twoDigits(minutes)}:${twoDigits(remainingSeconds)}';
   }
 }

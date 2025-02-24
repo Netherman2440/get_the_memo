@@ -10,7 +10,7 @@ class DatabaseService {
   
   // Constants for database setup
   static const String _databaseName = 'meetings.db';
-  static const int _databaseVersion = 1;
+  static const int _databaseVersion = 2;
   
   // Constants for meetings table
   static const String tableMeetings = 'meetings';
@@ -20,6 +20,7 @@ class DatabaseService {
   static const String columnCreatedAt = 'createdAt';
   static const String columnAudioPath = 'audioUrl';
   static const String columnTranscription = 'transcription';
+  static const String columnDuration = 'duration';
 
   static Future<void> init() async {
     // Get the application documents directory
@@ -33,6 +34,7 @@ class DatabaseService {
       dbPath,
       version: _databaseVersion,
       onCreate: _createDb,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -45,9 +47,22 @@ class DatabaseService {
         $columnDescription TEXT NOT NULL,
         $columnCreatedAt TEXT NOT NULL,
         $columnAudioPath TEXT NOT NULL,
-        $columnTranscription TEXT
+        $columnTranscription TEXT,
+        $columnDuration INTEGER
       )
     ''');
+  }
+
+  // Handle database upgrades
+  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion == 1) {
+      // Add new column to existing table
+      await db.execute('''
+        ALTER TABLE $tableMeetings
+        ADD COLUMN $columnDuration INTEGER
+      ''');
+      print('Database upgraded from version 1 to 2: Added duration column');
+    }
   }
 
   // Insert new meeting

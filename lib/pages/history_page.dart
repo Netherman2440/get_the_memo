@@ -118,80 +118,13 @@ class HistoryItem extends StatelessWidget {
                 },
               ),
               FilledButton.icon(
-                icon: Icon(Icons.edit),
-                label: Text('Edit'),
+                icon: Icon(Icons.info),
+                label: Text('Details'),
                 style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.secondary,
                   foregroundColor: Theme.of(context).colorScheme.onSecondary,
                 ),
-                onPressed: () {
-                  // Create controllers outside the dialog
-                  final titleController = TextEditingController(text: meeting.title);
-                  final transcriptionController = TextEditingController(text: meeting.transcription);
-
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text('Edit Recording Details'),
-                      content: SingleChildScrollView(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Title:', style: Theme.of(context).textTheme.titleSmall),
-                            TextField(
-                              controller: titleController,
-                              decoration: InputDecoration(
-                                hintText: 'Enter title',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            Text('Transcription:', style: Theme.of(context).textTheme.titleSmall),
-                            TextField(
-                              controller: transcriptionController,
-                              maxLines: 5,
-                              decoration: InputDecoration(
-                                hintText: 'Enter transcription',
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('Cancel'),
-                        ),
-                        FilledButton(
-                          onPressed: () {
-                            
-                            final updatedMeeting = Meeting(
-                              id: meetingId,
-                              title: titleController.text,
-                              transcription: transcriptionController.text,
-                              createdAt: date,
-                              audioUrl: meeting.audioUrl,
-                              description: meeting.description,
-                            );
-
-                            print('Updated meeting object:');
-                            print('Title: ${updatedMeeting.title}');
-                            print('Transcription: ${updatedMeeting.transcription}');
-                            
-                            viewModel.saveEditedMeeting(updatedMeeting);
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Changes saved')),
-                            );
-                          },
-                          child: Text('Save'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                onPressed: () => _showDetailsBottomSheet(context, meeting),
               ),
               FilledButton.icon(
                 icon: Icon(Icons.delete),
@@ -243,5 +176,159 @@ class HistoryItem extends StatelessWidget {
     int remainingSeconds = seconds % 60;
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     return '${twoDigits(minutes)}:${twoDigits(remainingSeconds)}';
+  }
+
+  void _showDetailsBottomSheet(BuildContext context, Meeting meeting) {
+    final titleController = TextEditingController(text: meeting.title);
+    final viewModel = context.read<HistoryViewModel>();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.5,
+        minChildSize: 0.3,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    margin: EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                
+                // Title section
+                Text('Title:', style: Theme.of(context).textTheme.titleSmall),
+                TextField(
+                  controller: titleController,
+                  decoration: InputDecoration(
+                    hintText: 'Enter title',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 24),
+                
+                // Transcription section
+                Row(
+                  children: [
+                    Text(
+                      'Transcription',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.record_voice_over),
+                      onPressed: () {
+                        // TODO: Implement transcription generation
+                        // viewModel.generateTranscription(meetingId);
+                      },
+                      tooltip: 'Generate Transcription',
+                    ),
+                  ],
+                ),
+                Container(
+                  margin: EdgeInsets.only(top: 8),
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    meeting.transcription ?? 'No transcription available',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                SizedBox(height: 24),
+                
+                // Tasks section
+                Row(
+                  children: [
+                    Text(
+                      'Tasks',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.add_task),
+                      onPressed: () {
+                        // TODO: Implement tasks generation
+                        // viewModel.generateTasks(meetingId);
+                      },
+                      tooltip: 'Generate Tasks',
+                    ),
+                  ],
+                ),
+                Container(
+                  margin: EdgeInsets.only(top: 8),
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'No tasks available',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                
+                // Action buttons
+                Padding(
+                  padding: EdgeInsets.only(top: 24),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('Cancel'),
+                      ),
+                      SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () {
+                          final updatedMeeting = Meeting(
+                            id: meeting.id,
+                            title: titleController.text,
+                            transcription: meeting.transcription,
+                            createdAt: meeting.createdAt,
+                            audioUrl: meeting.audioUrl,
+                            description: meeting.description,
+                          );
+                          
+                          viewModel.saveEditedMeeting(updatedMeeting);
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Changes saved')),
+                          );
+                        },
+                        child: Text('Save'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

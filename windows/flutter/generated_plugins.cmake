@@ -3,13 +3,14 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  audioplayers_windows
   permission_handler_windows
   record_windows
   url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
+  ggml_library_flutter
+  whisper_library_flutter
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)

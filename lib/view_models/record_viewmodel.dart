@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/services/audio_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 
 class RecordViewModel extends ChangeNotifier {
   RecordingState _state = RecordingState.idle;
@@ -50,11 +50,10 @@ class RecordViewModel extends ChangeNotifier {
           throw AudioServiceException('No recording path returned');
         }
 
-        // Get audio duration using AudioPlayer
+        // Get audio duration using AudioPlayer from just_audio
         final player = AudioPlayer();
-        final source = DeviceFileSource(path);
-        await player.setSource(source);
-        final duration = await player.getDuration();
+        await player.setFilePath(path);
+        final duration = await player.duration;
         await player.dispose();
 
         Meeting meeting = Meeting(
@@ -64,7 +63,7 @@ class RecordViewModel extends ChangeNotifier {
           transcription: "",
           createdAt: DateTime.now(),
           audioUrl: path,
-          duration: duration!.inSeconds
+          duration: duration?.inSeconds ?? 0
         );
         await DatabaseService.insertMeeting(meeting);
 

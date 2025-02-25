@@ -179,6 +179,7 @@ class HistoryItem extends StatelessWidget {
   }
 
   void _showDetailsBottomSheet(BuildContext context, Meeting meeting) {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
     final titleController = TextEditingController(text: meeting.title);
     final viewModel = context.read<HistoryViewModel>();
 
@@ -236,9 +237,21 @@ class HistoryItem extends StatelessWidget {
                     Spacer(),
                     IconButton(
                       icon: Icon(Icons.record_voice_over),
-                      onPressed: () {
-                        // TODO: Implement transcription generation
-                        // viewModel.generateTranscription(meetingId);
+                      onPressed: () async {
+                        Navigator.pop(context); // Close the bottom sheet
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(content: Text('Generating transcription...')),
+                        );
+                        await viewModel.generateTranscription(meetingId);
+                        if (viewModel.error != null) {
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(content: Text(viewModel.error!)),
+                          );
+                        } else {
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(content: Text('Transcription generated successfully')),
+                          );
+                        }
                       },
                       tooltip: 'Generate Transcription',
                     ),
@@ -270,9 +283,21 @@ class HistoryItem extends StatelessWidget {
                     Spacer(),
                     IconButton(
                       icon: Icon(Icons.add_task),
-                      onPressed: () {
-                        // TODO: Implement tasks generation
-                        // viewModel.generateTasks(meetingId);
+                      onPressed: () async {
+                        Navigator.pop(context); // Close the bottom sheet
+                        scaffoldMessenger.showSnackBar(
+                          SnackBar(content: Text('Generating tasks...')),
+                        );
+                        await viewModel.generateTasks(meetingId);
+                        if (viewModel.error != null) {
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(content: Text(viewModel.error!)),
+                          );
+                        } else {
+                          scaffoldMessenger.showSnackBar(
+                            SnackBar(content: Text('Tasks generated successfully')),
+                          );
+                        }
                       },
                       tooltip: 'Generate Tasks',
                     ),
@@ -315,7 +340,7 @@ class HistoryItem extends StatelessWidget {
                           
                           viewModel.saveEditedMeeting(updatedMeeting);
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          scaffoldMessenger.showSnackBar(
                             SnackBar(content: Text('Changes saved')),
                           );
                         },

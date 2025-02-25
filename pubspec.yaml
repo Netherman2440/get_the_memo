@@ -42,8 +42,14 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   sqflite_common_ffi: ^2.3.2
-  audioplayers: ^5.2.1
+
   url_launcher: ^6.2.5
+  just_audio: ^0.9.36
+  http: ^1.1.0
+  whisper_library_dart: ^0.0.7
+  whisper_library_flutter: ^0.0.7
+  ggml_library_flutter: ^0.0.8
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

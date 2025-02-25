@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/models/meeting.dart';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:get_the_memo/services/whisper_service.dart';
 
 class HistoryViewModel extends ChangeNotifier {
   // List of meetings
@@ -15,6 +16,8 @@ class HistoryViewModel extends ChangeNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _isPlaying = false;
   String? _currentPlayingId;
+
+  final WhisperService _whisperService = WhisperService();
 
   // Getters
   List<Meeting> get meetings => _meetings;
@@ -106,20 +109,77 @@ class HistoryViewModel extends ChangeNotifier {
       } else {
         // Play new audio
         await _audioPlayer.stop(); // Stop any previous playback
-        await _audioPlayer.play(DeviceFileSource(meeting.audioUrl!));
+        await _audioPlayer.setFilePath(meeting.audioUrl!);
+        await _audioPlayer.play();
         _isPlaying = true;
         _currentPlayingId = meetingId;
 
         // Add listener for when audio completes
-        _audioPlayer.onPlayerComplete.listen((event) {
-          _isPlaying = false;
-          _currentPlayingId = null;
-          notifyListeners();
+        _audioPlayer.playerStateStream.listen((state) {
+          if (state.processingState == ProcessingState.completed) {
+            _isPlaying = false;
+            _currentPlayingId = null;
+            notifyListeners();
+          }
         });
       }
       notifyListeners();
     } catch (e) {
       _error = 'Failed to play audio';
+      notifyListeners();
+    }
+  }
+
+  Future<void> generateTranscription(String meetingId) async {
+    try {
+      final meeting = _meetings.firstWhere((m) => m.id == meetingId);
+      
+      if (meeting.audioUrl == null) {
+        _error = 'No audio file available for transcription';
+        notifyListeners();
+        return;
+      }
+
+      // Initialize whisper service
+      await _whisperService.initialize();
+      
+      // Generate transcription
+      final transcription = await _whisperService.transcribeAudio(meeting.audioUrl!);
+      
+      // Update meeting with new transcription
+      final updatedMeeting = Meeting(
+        id: meeting.id,
+        title: meeting.title,
+        transcription: transcription,
+        createdAt: meeting.createdAt,
+        audioUrl: meeting.audioUrl,
+        description: meeting.description,
+        duration: meeting.duration,
+      );
+      
+      await saveEditedMeeting(updatedMeeting);
+    } catch (e) {
+      _error = 'Failed to generate transcription: ${e.toString()}';
+      notifyListeners();
+    }
+  }
+
+  Future<void> generateTasks(String meetingId) async {
+    try {
+      final meeting = _meetings.firstWhere((m) => m.id == meetingId);
+      
+      if (meeting.transcription == null || meeting.transcription!.isEmpty) {
+        _error = 'No transcription available to generate tasks';
+        notifyListeners();
+        return;
+      }
+
+      // TODO: Implement task generation logic
+      // This will be implemented later when we add task generation functionality
+      
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to generate tasks: ${e.toString()}';
       notifyListeners();
     }
   }

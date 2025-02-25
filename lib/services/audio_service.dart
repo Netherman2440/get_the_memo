@@ -60,7 +60,7 @@ class AudioService {
     }
   }
 
-  // Start recording
+  // Start recording with optimized settings
   static Future<void> startRecording(String fileName) async {
     try {
       print('Start recording'); // Debug log
@@ -83,7 +83,8 @@ class AudioService {
         const RecordConfig(
           encoder: AudioEncoder.wav,
           bitRate: 256000,
-          sampleRate: 44100,
+          sampleRate: 16000,  // Changed from 44100 to 16000 for Whisper
+          numChannels: 1,     // Changed to mono (1 channel)
         ),
         path: filePath,
       );

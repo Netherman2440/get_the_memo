@@ -6,7 +6,7 @@ import 'package:path/path.dart' as path;
 import 'package:whisper_library_dart/whisper_library_dart.dart';
 
 class WhisperService {
-  static const String modelFileName = 'ggml-tiny.bin';
+  static const String modelFileName = 'ggml-base.bin';
   
   WhisperLibrary? _whisperLibrary;
   bool _isInitialized = false;

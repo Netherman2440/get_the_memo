@@ -5,10 +5,10 @@ packages:
     dependency: transitive
     description:
       name: archive
-      sha256: "528579c7e4579719f04b21eeeeddfd73a18b31dabc22766893b7d1be7f49b967"
+      sha256: "0c64e928dcbefddecd234205422bcfc2b5e6d31be0b86fef0d0dd48d7b4c9742"
       url: "https://pub.dev"
     source: hosted
-    version: "4.0.3"
+    version: "4.0.4"
   args:
     dependency: transitive
     description:
@@ -141,10 +141,10 @@ packages:
     dependency: transitive
     description:
       name: ffi_universe
-      sha256: ed16561f8a925ff3fd6de0c0b39a7f41568abfd1027531c82682cb19c4229fb2
+      sha256: "87bd080f9e25e7969fa1bb21e1a22ab8b6be56f1d484836b246317222517ccda"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.6"
+    version: "0.0.8"
   fixnum:
     dependency: transitive
     description:
@@ -158,6 +158,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_dotenv:
+    dependency: "direct main"
+    description:
+      name: flutter_dotenv
+      sha256: b7c7be5cd9f6ef7a78429cabd2774d3c4af50e79cb2b7593e3d5d763ef95c61b
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.2.1"
   flutter_lints:
     dependency: "direct dev"
     description:
@@ -180,10 +188,10 @@ packages:
     dependency: transitive
     description:
       name: general_lib
-      sha256: "5618d8320485471f04d61c14c67b2c7044d77fae95acfb92375348af78baffd8"
+      sha256: e900899e0467ce64430bf004d4461e79e98ef3e00bc3e3bc08fcbfee323c70e4
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.66"
+    version: "0.0.67"
   general_ml:
     dependency: transitive
     description:
@@ -196,10 +204,10 @@ packages:
     dependency: "direct main"
     description:
       name: ggml_library_flutter
-      sha256: e8db68566a7edb640338c94694b7017a21bf31d59b7aeb9364a566172def78e6
+      sha256: ba8669b1c20682485a035e55cb3cebc4a94028044f70cda6cf14080344c889db
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.8"
+    version: "0.0.10"
   http:
     dependency: "direct main"
     description:
@@ -236,10 +244,10 @@ packages:
     dependency: transitive
     description:
       name: io_universe
-      sha256: d2e6860d90486d60f608266e32c4280300354adc00625d64c52d1785d7b81ada
+      sha256: "8086b50254572b70e056cce2f4ed3622565d6ba0dd90d9f4b4453c7b209408cf"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.5"
+    version: "0.0.7"
   js:
     dependency: transitive
     description:
@@ -785,26 +793,26 @@ packages:
     dependency: transitive
     description:
       name: web
-      sha256: cd3543bd5798f6ad290ea73d210f423502e71900302dde696f8bff84bf89a1cb
+      sha256: "868d88a33d8a87b18ffc05f9f030ba328ffefba92d6c127917a2ba740f9cfe4a"
       url: "https://pub.dev"
     source: hosted
-    version: "1.1.0"
+    version: "1.1.1"
   whisper_library_dart:
     dependency: "direct main"
     description:
       name: whisper_library_dart
-      sha256: cde3414fe09eb9c54c202cf14ffb0176d5effb60f59b5473187e73f57fdfb76c
+      sha256: "29a38e985ca0bb73c6e203dedb6c38efad19a9a3efd56a30d736e8c1bd3166b1"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.7"
+    version: "0.0.9"
   whisper_library_flutter:
     dependency: "direct main"
     description:
       name: whisper_library_flutter
-      sha256: "35154efcc70f2499549e1e750cd99878a80583c3217d9a975408675c25067332"
+      sha256: "1182049f7f0eaf18248e789facf2e12d7c754c2b988e7146e2c1947cd7dc458e"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.7"
+    version: "0.0.9"
   win32:
     dependency: transitive
     description:

@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/models/meeting.dart';
-import 'package:just_audio/just_audio.dart';
 import 'package:get_the_memo/services/whisper_service.dart';
+import 'package:just_audio/just_audio.dart';
 
 class HistoryViewModel extends ChangeNotifier {
   // List of meetings
@@ -139,12 +139,9 @@ class HistoryViewModel extends ChangeNotifier {
         notifyListeners();
         return;
       }
-
-      // Initialize whisper service
-      await _whisperService.initialize();
       
       // Generate transcription
-      final transcription = await _whisperService.transcribeAudio(meeting.audioUrl!);
+      final transcription = await _whisperService.transcribeAudio(meeting.audioUrl);
       
       // Update meeting with new transcription
       final updatedMeeting = Meeting(

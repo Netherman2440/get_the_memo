@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/view_models/history_view_model.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class HistoryPage extends StatelessWidget {
   @override

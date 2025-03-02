@@ -5,6 +5,7 @@ import 'package:record/record.dart'; // For audio recording
 import 'package:permission_handler/permission_handler.dart'; // For handling permissions
 
 class AudioService {
+  
   static const String _audioDirectory = 'audio_recordings';
   static AudioRecorder? _audioRecorder;
   static bool _isPaused = false;
@@ -25,7 +26,7 @@ class AudioService {
     required String fileName,
   }) async {
     final audioDir = await _getAudioDirectory();
-    final savedFilePath = path.join(audioDir, '$fileName.m4a');
+    final savedFilePath = path.join(audioDir, '$fileName.wav');
 
     try {
       await audioFile.copy(savedFilePath);

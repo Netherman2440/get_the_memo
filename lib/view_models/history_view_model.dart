@@ -141,7 +141,7 @@ class HistoryViewModel extends ChangeNotifier {
       }
       
       // Generate transcription
-      final transcription = await _whisperService.transcribeAudio(meeting.audioUrl);
+      final transcription = await _whisperService.transcribeLargeAudio(meeting.audioUrl);
       
       // Update meeting with new transcription
       final updatedMeeting = Meeting(

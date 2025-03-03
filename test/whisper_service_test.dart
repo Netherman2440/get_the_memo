@@ -19,7 +19,7 @@ void main() async {
   test('WhisperService transcribes audio correctly', () async {
     final service = WhisperService();
     // Use a test audio file in your test assets
-    final result = await service.transcribeAudio(
+    final result = await service.transcribeLargeAudio(
         'D:\\Ignacy\\Audio\\production_24.01.2025\\production_24.01.2025.mp3');
     print(result);
     // Verify the result contains expected data

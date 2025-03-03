@@ -1,10 +1,14 @@
 import 'dart:io';
+import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class HistoryViewModel extends ChangeNotifier {
   // List of meetings

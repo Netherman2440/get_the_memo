@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/models/meeting.dart';
+import 'package:get_the_memo/services/notification_service.dart';
 import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
@@ -35,7 +36,7 @@ class HistoryViewModel extends ChangeNotifier {
     try {
       _isLoading = true;
       notifyListeners();
-      
+
       _meetings = await DatabaseService.getMeetings();
       _error = null;
     } catch (e) {
@@ -49,9 +50,10 @@ class HistoryViewModel extends ChangeNotifier {
   Future<void> deleteMeeting(String id) async {
     try {
       //remove audio file
-      final file_path = _meetings.firstWhere((meeting) => meeting.id == id).audioUrl;
-      if (file_path != null) {
-        final file = File(file_path);
+      final filePath =
+          _meetings.firstWhere((meeting) => meeting.id == id).audioUrl;
+      if (filePath != null) {
+        final file = File(filePath);
         if (await file.exists()) {
           await file.delete();
         }
@@ -88,17 +90,15 @@ class HistoryViewModel extends ChangeNotifier {
     try {
       final meeting = _meetings.firstWhere((m) => m.id == meetingId);
       print('Audio URL: ${meeting.audioUrl}');
-      
-      if (meeting.audioUrl != null) {
-        final file = File(meeting.audioUrl!);
-        print('File exists: ${await file.exists()}');
-        print('File size: ${await file.length()} bytes');
-        
-        // Read first few bytes to verify it's a valid WAV file
-        final bytes = await file.openRead().take(4).toList();
-        print(bytes);
-      }
-      
+
+      final file = File(meeting.audioUrl!);
+      print('File exists: ${await file.exists()}');
+      print('File size: ${await file.length()} bytes');
+
+      // Read first few bytes to verify it's a valid WAV file
+      final bytes = await file.openRead().take(4).toList();
+      print(bytes);
+
       if (meeting.audioUrl == null) {
         _error = 'No audio file available';
         notifyListeners();
@@ -113,7 +113,7 @@ class HistoryViewModel extends ChangeNotifier {
       } else {
         // Play new audio
         await _audioPlayer.stop(); // Stop any previous playback
-        await _audioPlayer.setFilePath(meeting.audioUrl!);
+        await _audioPlayer.setFilePath(meeting.audioUrl);
         await _audioPlayer.play();
         _isPlaying = true;
         _currentPlayingId = meetingId;
@@ -137,16 +137,12 @@ class HistoryViewModel extends ChangeNotifier {
   Future<void> generateTranscription(String meetingId) async {
     try {
       final meeting = _meetings.firstWhere((m) => m.id == meetingId);
-      
-      if (meeting.audioUrl == null) {
-        _error = 'No audio file available for transcription';
-        notifyListeners();
-        return;
-      }
-      
+
       // Generate transcription
-      final transcription = await _whisperService.transcribeLargeAudio(meeting.audioUrl);
-      
+      final transcription = await _whisperService.transcribeLargeAudio(
+        meeting.audioUrl,
+      );
+
       // Update meeting with new transcription
       final updatedMeeting = Meeting(
         id: meeting.id,
@@ -157,8 +153,11 @@ class HistoryViewModel extends ChangeNotifier {
         description: meeting.description,
         duration: meeting.duration,
       );
-      
+
       await saveEditedMeeting(updatedMeeting);
+      await NotificationService.showTranscriptionCompleteNotification(
+        meetingTitle: meeting.title,
+      );
     } catch (e) {
       _error = 'Failed to generate transcription: ${e.toString()}';
       notifyListeners();
@@ -168,7 +167,7 @@ class HistoryViewModel extends ChangeNotifier {
   Future<void> generateTasks(String meetingId) async {
     try {
       final meeting = _meetings.firstWhere((m) => m.id == meetingId);
-      
+
       if (meeting.transcription == null || meeting.transcription!.isEmpty) {
         _error = 'No transcription available to generate tasks';
         notifyListeners();
@@ -177,7 +176,7 @@ class HistoryViewModel extends ChangeNotifier {
 
       // TODO: Implement task generation logic
       // This will be implemented later when we add task generation functionality
-      
+
       notifyListeners();
     } catch (e) {
       _error = 'Failed to generate tasks: ${e.toString()}';

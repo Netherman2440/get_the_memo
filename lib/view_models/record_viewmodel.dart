@@ -22,17 +22,14 @@ class RecordViewModel extends ChangeNotifier {
           _currentFileName = DateTime.now().millisecondsSinceEpoch.toString();
           await AudioService.startRecording(_currentFileName!);
           _state = RecordingState.recording;
-          break;
           
         case RecordingState.recording:
           await AudioService.pauseRecording();
           _state = RecordingState.paused;
-          break;
           
         case RecordingState.paused:
           await AudioService.resumeRecording();
           _state = RecordingState.recording;
-          break;
       }
       notifyListeners();
     } catch (e) {
@@ -53,7 +50,7 @@ class RecordViewModel extends ChangeNotifier {
         // Get audio duration using AudioPlayer from just_audio
         final player = AudioPlayer();
         await player.setFilePath(path);
-        final duration = await player.duration;
+        final duration = player.duration;
         await player.dispose();
 
         Meeting meeting = Meeting(
@@ -69,9 +66,9 @@ class RecordViewModel extends ChangeNotifier {
 
         final meetings = await DatabaseService.getMeetings();
         print('All meetings in database:');
-        meetings.forEach((meeting) {
+        for (var meeting in meetings) {
           print('Meeting ID: ${meeting.id}, Audio Path: ${meeting.audioUrl}');
-        });
+        }
       }
     } catch (e) {
       print('Error saving recording: $e');

@@ -81,7 +81,7 @@ class HistoryItem extends StatelessWidget {
     
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      color: Theme.of(context).colorScheme.surfaceVariant,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Column(
         children: [
           ListTile(
@@ -106,14 +106,8 @@ class HistoryItem extends StatelessWidget {
                 icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
                 label: Text(isPlaying ? 'Stop' : 'Play'),
                 onPressed: () async {
-                  if (meeting.audioUrl != null) {
-                    viewModel.playAudio(meetingId);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('No audio file available')),
-                    );
-                  }
-                },
+                  viewModel.playAudio(meetingId);
+                                },
               ),
               FilledButton.icon(
                 icon: Icon(Icons.info),
@@ -259,7 +253,7 @@ class HistoryItem extends StatelessWidget {
                   margin: EdgeInsets.only(top: 8),
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -305,7 +299,7 @@ class HistoryItem extends StatelessWidget {
                   margin: EdgeInsets.only(top: 8),
                   padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

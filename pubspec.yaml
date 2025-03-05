@@ -50,7 +50,8 @@ dependencies:
   whisper_library_flutter: ^0.0.7
   ggml_library_flutter: ^0.0.8
   flutter_dotenv: ^5.2.1
-
+  flutter_local_notifications: ^18.0.1
+  
 
 dev_dependencies:
   flutter_test:

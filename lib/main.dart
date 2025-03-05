@@ -5,9 +5,16 @@ import 'package:get_the_memo/pages/record_page.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:get_the_memo/services/notification_service.dart';
 //flutter emulators --launch Pixel_3a_API_34_extension_level_7_x86_64
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Inicjalizacja serwisu powiadomień
+  await NotificationService.initialize();
+  await NotificationService.requestPermissions();
+  
   await dotenv.load(fileName: '.env');
   await DatabaseService.init();
   runApp(MyApp());
@@ -38,10 +45,11 @@ class MyAppState extends ChangeNotifier {
   var favorites = <WordPair>[];
 
   void toggleFavorite() {
-    if (favorites.contains(current))
+    if (favorites.contains(current)) {
       favorites.remove(current);
-    else
+    } else {
       favorites.add(current);
+    }
     print(favorites);
     notifyListeners();
   }

@@ -1,21 +1,40 @@
+
 class Meeting {
   final String id;
-  final String title;
-  final String description;
+  String title;
+  String description;
   final DateTime createdAt;
-  final String audioUrl;
-  String? transcription;
+  final String? audioUrl;
   int? duration;
+
+
   
   Meeting({
     required this.id, 
     required this.title,
     required this.description,
     required this.createdAt,
-    required this.audioUrl,
-    this.transcription,
+    this.audioUrl,
     this.duration,
   });
+  // Create a copy with some fields replaced
+  Meeting copyWith({
+    String? id,
+    String? title,
+    String? description,
+    DateTime? createdAt,
+    String? audioUrl,
+    int? duration,
+  }) {
+    return Meeting(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      createdAt: createdAt ?? this.createdAt,
+      audioUrl: audioUrl ?? this.audioUrl,
+      duration: duration ?? this.duration,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -23,7 +42,6 @@ class Meeting {
     'description': description,
     'createdAt': createdAt.toIso8601String(),
     'audioUrl': audioUrl,
-    'transcription': transcription,
     'duration': duration,
   };
   
@@ -33,18 +51,11 @@ class Meeting {
     description: json['description'],
     createdAt: DateTime.parse(json['createdAt']),
     audioUrl: json['audioUrl'],
-    transcription: json['transcription'],
-    duration: json['duration'],
+    duration: json['duration']
   );
 }
 
-enum MeetingStatus {
-  none,
-  recording,
-  transcription,
-  tasks,
-  done,
-}
+
 
 
 

@@ -51,7 +51,9 @@ dependencies:
   ggml_library_flutter: ^0.0.8
   flutter_dotenv: ^5.2.1
   flutter_local_notifications: ^18.0.1
-  
+  flutter_background_service: ^5.1.0
+  shared_preferences: ^2.2.3
+
 
 dev_dependencies:
   flutter_test:

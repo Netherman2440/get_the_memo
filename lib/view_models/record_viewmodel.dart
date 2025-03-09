@@ -57,7 +57,6 @@ class RecordViewModel extends ChangeNotifier {
           id: _currentFileName!,
           title: 'New Meeting',
           description: 'Description',
-          transcription: "",
           createdAt: DateTime.now(),
           audioUrl: path,
           duration: duration?.inSeconds ?? 0

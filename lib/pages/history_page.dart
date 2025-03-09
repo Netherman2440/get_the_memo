@@ -28,7 +28,6 @@ class HistoryPage extends StatelessWidget {
                   title: meeting.title,
                   date: meeting.createdAt,
                   duration: _formatDuration(meeting.duration),
-                  transcription: meeting.transcription ?? '',
                   meetingId: meeting.id,
                 );
               },
@@ -48,7 +47,6 @@ class HistoryPage extends StatelessWidget {
   }
 }
 
-
 class HistoryItem extends StatelessWidget {
   final String title;
   final DateTime date;
@@ -57,8 +55,8 @@ class HistoryItem extends StatelessWidget {
   final String meetingId;
 
   HistoryItem({
-    required this.title, 
-    required this.date, 
+    required this.title,
+    required this.date,
     required this.duration,
     required this.meetingId,
     this.transcription = '',
@@ -66,101 +64,129 @@ class HistoryItem extends StatelessWidget {
 
   String _formatDateTime(DateTime dateTime) {
     // Format date as HH:mm DD-MM-YYYY
-    return '${dateTime.hour.toString().padLeft(2, '0')}:'
-           '${dateTime.minute.toString().padLeft(2, '0')} '
-           '${dateTime.day.toString().padLeft(2, '0')}-'
-           '${dateTime.month.toString().padLeft(2, '0')}-'
-           '${dateTime.year}';
+    return 
+        '${dateTime.day.toString().padLeft(2, '0')}-'
+        '${dateTime.month.toString().padLeft(2, '0')}-'
+        '${dateTime.year} '
+        '${dateTime.hour.toString().padLeft(2, '0')}:'
+        '${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<HistoryViewModel>();
-    final bool isPlaying = viewModel.isPlaying && viewModel.currentPlayingId == meetingId;
+    final bool isPlaying =
+        viewModel.isPlaying && viewModel.currentPlayingId == meetingId;
     final meeting = viewModel.meetings.firstWhere((m) => m.id == meetingId);
-    
+
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Column(
-        children: [
-          ListTile(
-            title: Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+      child: ListTile(
+        leading: Icon(
+          Icons.mic,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        title: Text(
+          title,  
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${meeting.description}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
-            subtitle: Text(
-              '${_formatDateTime(date)} | ${_formatDuration(meeting.duration)}',
+            SizedBox(height: 4),
+            Text(
+              '${_formatDateTime(date)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
               ),
             ),
-            leading: Icon(Icons.mic, color: Theme.of(context).colorScheme.primary),
+            Text(
+              duration,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+              ),
+            ),
+          ],
+        ),
+        trailing: IconButton(
+          icon: Icon(
+            Icons.edit,
+            color: Theme.of(context).colorScheme.primary,
           ),
-          OverflowBar(
-            alignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              FilledButton.icon(
-                icon: Icon(isPlaying ? Icons.stop : Icons.play_arrow),
-                label: Text(isPlaying ? 'Stop' : 'Play'),
-                onPressed: () async {
-                  viewModel.playAudio(meetingId);
-                                },
+          onPressed: () {
+            showEditDialog(context, meetingId);
+          },
+        ),
+        onTap: () {
+          print(meetingId);
+        },
+      ),
+    );
+  }
+
+  void showEditDialog(BuildContext context, String meetingId) {
+    final viewModel = context.read<HistoryViewModel>();
+    final meeting = viewModel.meetings.firstWhere((m) => m.id == meetingId);
+    String newDescription = meeting.description;
+    String newTitle = meeting.title;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Edit Meeting Title'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: TextEditingController(text: meeting.title),
+              onChanged: (value) {
+                newTitle = value;
+              },
+              decoration: InputDecoration(
+                hintText: 'Title',
               ),
-              FilledButton.icon(
-                icon: Icon(Icons.info),
-                label: Text('Details'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
-                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
-                ),
-                onPressed: () => _showDetailsBottomSheet(context, meeting),
+            ),
+            SizedBox(height: 10),
+            TextField(
+              controller: TextEditingController(text: meeting.description),
+              onChanged: (value) {
+                newDescription = value;
+              },
+              decoration: InputDecoration(
+                hintText: 'Description',
+                border: OutlineInputBorder(),
               ),
-              FilledButton.icon(
-                icon: Icon(Icons.delete),
-                label: Text('Delete'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.error,
-                  foregroundColor: Theme.of(context).colorScheme.onError,
-                ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text('Confirm Delete'),
-                      content: Text('Are you sure you want to delete this item?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text('Cancel'),
-                        ),
-                        FilledButton(
-                          onPressed: () {
-                            viewModel.deleteMeeting(meetingId);
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Item deleted')),
-                            );
-                          },
-                          style: FilledButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.error,
-                            foregroundColor: Theme.of(context).colorScheme.onError,
-                          ),
-                          child: Text('Delete'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ],
+              maxLines: 4,
+              textInputAction: TextInputAction.newline,
+              keyboardType: TextInputType.multiline,
+
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              meeting.description = newDescription;
+              meeting.title = newTitle;
+              viewModel.updateMeeting(meeting);
+              Navigator.of(context).pop();
+            },
+            child: Text('Save'),
           ),
         ],
       ),
     );
-  }
+  } 
 
   String _formatDuration(int? seconds) {
     if (seconds == null) return '00:00';
@@ -168,184 +194,5 @@ class HistoryItem extends StatelessWidget {
     int remainingSeconds = seconds % 60;
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     return '${twoDigits(minutes)}:${twoDigits(remainingSeconds)}';
-  }
-
-  void _showDetailsBottomSheet(BuildContext context, Meeting meeting) {
-    final scaffoldMessenger = ScaffoldMessenger.of(context);
-    final titleController = TextEditingController(text: meeting.title);
-    final viewModel = context.read<HistoryViewModel>();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.5,
-        minChildSize: 0.3,
-        maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Drag handle
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                
-                // Title section
-                Text('Title:', style: Theme.of(context).textTheme.titleSmall),
-                TextField(
-                  controller: titleController,
-                  decoration: InputDecoration(
-                    hintText: 'Enter title',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: 24),
-                
-                // Transcription section
-                Row(
-                  children: [
-                    Text(
-                      'Transcription',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.record_voice_over),
-                      onPressed: () async {
-                        Navigator.pop(context); // Close the bottom sheet
-                        scaffoldMessenger.showSnackBar(
-                          SnackBar(content: Text('Generating transcription...')),
-                        );
-                        await viewModel.generateTranscription(meetingId);
-                        if (viewModel.error != null) {
-                          scaffoldMessenger.showSnackBar(
-                            SnackBar(content: Text(viewModel.error!)),
-                          );
-                        } else {
-                          scaffoldMessenger.showSnackBar(
-                            SnackBar(content: Text('Transcription generated successfully')),
-                          );
-                        }
-                      },
-                      tooltip: 'Generate Transcription',
-                    ),
-                  ],
-                ),
-                Container(
-                  margin: EdgeInsets.only(top: 8),
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    meeting.transcription ?? 'No transcription available',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-                SizedBox(height: 24),
-                
-                // Tasks section
-                Row(
-                  children: [
-                    Text(
-                      'Tasks',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Spacer(),
-                    IconButton(
-                      icon: Icon(Icons.add_task),
-                      onPressed: () async {
-                        Navigator.pop(context); // Close the bottom sheet
-                        scaffoldMessenger.showSnackBar(
-                          SnackBar(content: Text('Generating tasks...')),
-                        );
-                        await viewModel.generateTasks(meetingId);
-                        if (viewModel.error != null) {
-                          scaffoldMessenger.showSnackBar(
-                            SnackBar(content: Text(viewModel.error!)),
-                          );
-                        } else {
-                          scaffoldMessenger.showSnackBar(
-                            SnackBar(content: Text('Tasks generated successfully')),
-                          );
-                        }
-                      },
-                      tooltip: 'Generate Tasks',
-                    ),
-                  ],
-                ),
-                Container(
-                  margin: EdgeInsets.only(top: 8),
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    'No tasks available',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-                
-                // Action buttons
-                Padding(
-                  padding: EdgeInsets.only(top: 24),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text('Cancel'),
-                      ),
-                      SizedBox(width: 8),
-                      FilledButton(
-                        onPressed: () {
-                          final updatedMeeting = Meeting(
-                            id: meeting.id,
-                            title: titleController.text,
-                            transcription: meeting.transcription,
-                            createdAt: meeting.createdAt,
-                            audioUrl: meeting.audioUrl,
-                            description: meeting.description,
-                          );
-                          
-                          viewModel.saveEditedMeeting(updatedMeeting);
-                          Navigator.pop(context);
-                          scaffoldMessenger.showSnackBar(
-                            SnackBar(content: Text('Changes saved')),
-                          );
-                        },
-                        child: Text('Save'),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 }

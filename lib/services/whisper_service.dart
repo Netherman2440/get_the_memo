@@ -37,45 +37,6 @@ class WhisperService {
     }
   }
 
-  /// Starts transcription that continues even when app is closed
-  /// Returns immediately and saves result to persistent storage
-  Future<void> startBackgroundTranscription({
-    required String audioPath,
-    required String meetingId,
-    int maxFileSizeMB = 20,
-  }) async {
-    try {
-      // Save initial state
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('transcription_in_progress_$meetingId', true);
-      await prefs.setDouble('transcription_progress_$meetingId', 0.0);
-      
-      // Get service instance
-      final service = FlutterBackgroundService();
-      
-      // Check if service is running, if not start it
-      bool isRunning = await service.isRunning();
-      if (!isRunning) {
-        await service.startService();
-      }
-      
-      // Send command to start transcription
-      service.invoke('startTranscription', {
-        'audioPath': audioPath,
-        'meetingId': meetingId,
-        'maxFileSizeMB': maxFileSizeMB,
-      });
-      
-      print('Background transcription task scheduled for meeting: $meetingId');
-    } catch (e) {
-      print('Error starting background transcription: $e');
-      // Reset the status in case of error
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('transcription_in_progress_$meetingId', false);
-      throw Exception('Failed to start background transcription: $e');
-    }
-  }
-
   /// Checks if a transcription is in progress
   Future<bool> isTranscriptionInProgress(String meetingId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -103,10 +64,10 @@ class WhisperService {
   /// Splits audio file into smaller chunks and transcribes each chunk
   Future<String> processTranscription({
     required String audioPath,
+    String? meetingId,
     int maxFileSizeMB = 20,
     Function(double)? onProgressUpdate,
     bool saveProgress = false,
-    String? meetingId,
   }) async {
     try {
       print('Starting transcription process...');
@@ -124,11 +85,14 @@ class WhisperService {
       // If file is small enough, transcribe directly
       if (fileSizeBytes <= maxFileSizeBytes) {
         final transcription = await transcribeAudio(audioPath);
-        
+        print('Transcription completed directly');
+        print(transcription);
         // Update progress to 100%
         if (saveProgress && meetingId != null) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setDouble('transcription_progress_$meetingId', 1.0);
+          await prefs.setBool('transcription_completed_$meetingId', true);
+          await prefs.setBool('transcription_in_progress_$meetingId', false);
         }
         
         return transcription;

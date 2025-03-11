@@ -15,154 +15,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 //flutter emulators --launch Pixel_3a_API_34_extension_level_7_x86_64
-/*
-Future<void> initializeBackgroundService() async {
-  final service = FlutterBackgroundService();
-  
-  // Create notification channel for Android
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
-    'transcription_service', // id
-    'Transcription Service', // title
-    description: 'Used for the transcription background service', // description
-    importance: Importance.low,
-  );
-  
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
-      
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
+//flutter run --verbose-system-logs=false
 
-  await service.configure(
-    androidConfiguration: AndroidConfiguration(
-      onStart: onStart,
-      autoStart: true,
-      isForegroundMode: true,
-      notificationChannelId: channel.id,
-      initialNotificationTitle: 'Transcription Service',
-      initialNotificationContent: 'Initializing',
-      foregroundServiceNotificationId: 888,
-    ),
-    iosConfiguration: IosConfiguration(
-      autoStart: true,
-      onForeground: onStart,
-      onBackground: onIosBackground,
-    ),
-  );
-}
-
-@pragma('vm:entry-point')
-Future<bool> onIosBackground(ServiceInstance service) async {
-  WidgetsFlutterBinding.ensureInitialized();
-  DartPluginRegistrant.ensureInitialized();
-  return true;
-}
-
-@pragma('vm:entry-point')
-void onStart(ServiceInstance service) async {
-  DartPluginRegistrant.ensureInitialized();
-  
-  // For Android, bring to foreground
-  if (service is AndroidServiceInstance) {
-    service.setAsForegroundService();
-    
-    // Set notification info immediately to avoid "Bad notification" error
-    service.setForegroundNotificationInfo(
-      title: "Transcription Service",
-      content: "Running in background",
-    );
-  }
-  
-  // Listen for startTranscription command
-  service.on('startTranscription').listen((event) async {
-    if (event == null) return;
-    
-    try {
-      final audioPath = event['audioPath'] as String;
-      final meetingId = event['meetingId'] as String;
-      final maxFileSizeMB = event['maxFileSizeMB'] as int? ?? 20;
-      
-      print('Background service received transcription request for meeting: $meetingId');
-      
-      // Import your WhisperService here
-      // This is a simplified version - you'll need to adapt it to your actual implementation
-      final prefs = await SharedPreferences.getInstance();
-      
-      try {
-        // Here you would implement the actual transcription logic
-        // For now, let's simulate progress updates
-        for (int i = 1; i <= 10; i++) {
-          // Update progress
-          await prefs.setDouble('transcription_progress_$meetingId', i / 10);
-          
-          // Update notification to show progress
-          if (service is AndroidServiceInstance) {
-            service.setForegroundNotificationInfo(
-              title: "Transcribing audio",
-              content: "Progress: ${i * 10}%",
-            );
-          }
-          
-          await Future.delayed(Duration(seconds: 2));
-        }
-        
-        // Simulate completed transcription
-        final mockTranscription = {
-          'text': 'This is a mock transcription for testing purposes.',
-          'segments': []
-        };
-        
-        // Save result
-        await prefs.setBool('transcription_in_progress_$meetingId', false);
-        await prefs.setBool('transcription_completed_$meetingId', true);
-        await prefs.setString('transcription_$meetingId', jsonEncode(mockTranscription));
-        
-        print('Transcription completed for meeting: $meetingId');
-        
-        // Update notification
-        if (service is AndroidServiceInstance) {
-          service.setForegroundNotificationInfo(
-            title: "Transcription Complete",
-            content: "Audio has been transcribed successfully",
-          );
-        }
-      } catch (e) {
-        print('Error in background transcription: $e');
-        await prefs.setBool('transcription_in_progress_$meetingId', false);
-        await prefs.setBool('transcription_error_$meetingId', true);
-        await prefs.setString('transcription_error_message_$meetingId', e.toString());
-        
-        // Update notification
-        if (service is AndroidServiceInstance) {
-          service.setForegroundNotificationInfo(
-            title: "Transcription Error",
-            content: "An error occurred during transcription",
-          );
-        }
-      }
-    } catch (e) {
-      print('Error processing transcription request: $e');
-    }
-  });
-  
-  // Keep the service alive
-  Timer.periodic(Duration(seconds: 30), (timer) {
-    if (service is AndroidServiceInstance) {
-      service.setForegroundNotificationInfo(
-        title: "Transcription Service",
-        content: "Running in background",
-      );
-    }
-    
-    // You can also update the UI with this data
-    service.invoke('update', {
-      'current_date': DateTime.now().toIso8601String(),
-    });
-  });
-}
-*/
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -170,7 +24,7 @@ void main() async {
   await dotenv.load();
   
   // Initialize background service
-  await BackgroundServiceManager.initializeService();
+  await BackgroundService.initializeService();
   
   // Inicjalizacja powiadomień
   await NotificationService.initialize();

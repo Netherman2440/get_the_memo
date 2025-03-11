@@ -133,14 +133,14 @@ class DatabaseService {
   // Methods for transcriptions
   
   // Insert new transcription
-  static Future<void> insertTranscription(String meetingId, String transcriptionText) async {
+  static Future<void> insertTranscription(String meetingId, String transcription) async {
     final transcriptionId = 'trans_${DateTime.now().millisecondsSinceEpoch}_$meetingId';
     await db?.insert(
       tableTranscriptions,
       {
         columnTranscriptionId: transcriptionId,
         columnMeetingId: meetingId,
-        columnTranscriptionText: transcriptionText,
+        columnTranscriptionText: transcription,
         columnTranscriptionCreatedAt: DateTime.now().toIso8601String(),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -164,6 +164,7 @@ class DatabaseService {
   
   // Update transcription
   static Future<void> updateTranscription(String transcriptionId, String transcriptionText) async {
+    
     await db?.update(
       tableTranscriptions,
       {

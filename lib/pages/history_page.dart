@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_the_memo/pages/details_page.dart';
 import 'package:provider/provider.dart';
 import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/view_models/history_view_model.dart';
@@ -87,6 +88,12 @@ class HistoryItem extends StatelessWidget {
           Icons.mic,
           color: Theme.of(context).colorScheme.primary,
         ),
+        trailing: IconButton(
+          icon: Icon(Icons.delete),
+          onPressed: () {
+            print('Delete meeting');
+          },
+        ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         title: Text(
           title,  
@@ -118,75 +125,14 @@ class HistoryItem extends StatelessWidget {
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: Icon(
-            Icons.edit,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-          onPressed: () {
-            showEditDialog(context, meetingId);
-          },
-        ),
         onTap: () {
-          print(meetingId);
+          
+          Navigator.of(context).push(MaterialPageRoute(builder: (context) => DetailsPage(meetingId: meetingId)));
+          
         },
       ),
     );
   }
-
-  void showEditDialog(BuildContext context, String meetingId) {
-    final viewModel = context.read<HistoryViewModel>();
-    final meeting = viewModel.meetings.firstWhere((m) => m.id == meetingId);
-    String newDescription = meeting.description;
-    String newTitle = meeting.title;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Edit Meeting Title'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: TextEditingController(text: meeting.title),
-              onChanged: (value) {
-                newTitle = value;
-              },
-              decoration: InputDecoration(
-                hintText: 'Title',
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: TextEditingController(text: meeting.description),
-              onChanged: (value) {
-                newDescription = value;
-              },
-              decoration: InputDecoration(
-                hintText: 'Description',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 4,
-              textInputAction: TextInputAction.newline,
-              keyboardType: TextInputType.multiline,
-
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              meeting.description = newDescription;
-              meeting.title = newTitle;
-              viewModel.updateMeeting(meeting);
-              Navigator.of(context).pop();
-            },
-            child: Text('Save'),
-          ),
-        ],
-      ),
-    );
-  } 
 
   String _formatDuration(int? seconds) {
     if (seconds == null) return '00:00';

@@ -104,4 +104,8 @@ class HistoryViewModel extends ChangeNotifier {
     _meetings[_meetings.indexWhere((m) => m.id == meeting.id)] = meeting;
     notifyListeners();
   }
+
+  void showDetails(String meetingId) {
+    
+  }
 }

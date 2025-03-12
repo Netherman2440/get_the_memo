@@ -127,7 +127,8 @@ class DetailsPageContent extends StatelessWidget {
               child: Text('What would you like to do next?'),
             ),
 
-          // other buttons
+          // summary
+          viewModel.getSummarySection(context),
         ],
       ),
     );

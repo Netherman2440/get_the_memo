@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/services/background_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
+import 'package:get_the_memo/services/openai_service.dart' as OpenAiService;
 import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -14,6 +15,9 @@ class DetailsViewModel extends ChangeNotifier {
   String? summary;
   String? tasks;
   TranscriptionStatus transcriptionStatus = TranscriptionStatus.notStarted;
+  SummaryStatus summaryStatus = SummaryStatus.notStarted;
+  TasksStatus tasksStatus = TasksStatus.notStarted;
+
 
   // Constructor that accepts meetingId
   DetailsViewModel({String? meetingId}) {
@@ -58,6 +62,24 @@ class DetailsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> createSummary(String meetingId) async {
+    summaryStatus = SummaryStatus.inProgress;
+    notifyListeners();
+    
+    summary = await OpenAiService.summarize(transcript!);
+
+    summaryStatus = SummaryStatus.completed;
+    notifyListeners();
+  }
+
+  Future<void> createTasks(String meetingId) async {
+    tasksStatus = TasksStatus.inProgress;
+    notifyListeners();
+    tasks = await OpenAiService.actionPoints(transcript!);
+    tasksStatus = TasksStatus.completed;
+    notifyListeners();
+  }
+
   Future<void> editTitle(String title) async {
     meeting?.title = title;
     await DatabaseService.updateMeeting(meeting!);
@@ -99,6 +121,45 @@ class DetailsViewModel extends ChangeNotifier {
     }
 
     return status;
+  }
+
+  getSummarySection(BuildContext context) {
+
+    if (transcript == null || transcript!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    switch (summaryStatus) {
+      case SummaryStatus.notStarted:
+        return ElevatedButton(
+          onPressed: () {
+            createSummary(meeting!.id);
+          },
+          child: const Text('Create Summary'),
+        );
+      case SummaryStatus.inProgress:
+        return ElevatedButton(
+          onPressed: () {
+            //createSummary(meeting!.id);
+          },
+          child: const Text('Creating Summary'),
+        );
+      case SummaryStatus.completed:
+        return ListTile(
+          title: Text('Summary'),
+          subtitle: Text(summary!),
+          onTap: () {
+            //editSummary(summary!);
+          },
+        );
+      case SummaryStatus.failed:
+        return ElevatedButton(
+          onPressed: () {
+            createSummary(meeting!.id);
+          },
+          child: const Text('Retry Summary'),
+        );
+    }
   }
 }
 

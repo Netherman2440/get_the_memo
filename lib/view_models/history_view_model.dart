@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:get_the_memo/pages/details_page.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/services/notification_service.dart';
@@ -105,7 +106,14 @@ class HistoryViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void showDetails(String meetingId) {
-    
+  Future<void> showDetails(BuildContext context, String meetingId) async {
+    // Navigate to details page
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => DetailsPage(meetingId: meetingId),
+      ),
+    );
+
+    await loadMeetings();
   }
 }

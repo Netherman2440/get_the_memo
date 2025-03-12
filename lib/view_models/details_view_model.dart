@@ -58,6 +58,27 @@ class DetailsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> editTitle(String title) async {
+    meeting?.title = title;
+    await DatabaseService.updateMeeting(meeting!);
+    notifyListeners();
+  }
+
+  Future<void> editDescription(String description) async {
+    meeting?.description = description;
+    await DatabaseService.updateMeeting(meeting!);
+    notifyListeners();
+  }
+
+  Future<void> editTranscript(String transcript) async {
+    this.transcript = transcript;
+    await DatabaseService.updateTranscription(meeting!.id, transcript);
+    notifyListeners();
+  }
+  
+  
+  
+
   // Reload current meeting if needed
   Future<void> refresh() async {
     if (_meetingId != null) {
@@ -82,3 +103,6 @@ class DetailsViewModel extends ChangeNotifier {
 }
 
 enum TranscriptionStatus { notStarted, inProgress, completed, failed }
+enum SummaryStatus { notStarted, inProgress, completed, failed }
+enum TasksStatus { notStarted, inProgress, completed, failed }
+

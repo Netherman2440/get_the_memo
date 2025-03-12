@@ -33,10 +33,18 @@ class DetailsPageContent extends StatelessWidget {
               subtitle: Text('${viewModel.meeting?.title}'),
               tileColor: Theme.of(context).colorScheme.onPrimary,
               onTap: () {
-                print('Edit title');
+                _showEditDialog(
+                  context: context,
+                  title: 'Edit Title',
+                  initialContent: viewModel.meeting?.title ?? '',
+                  onSave: (newTitle) {
+                    viewModel.editTitle(newTitle);
+                  },
+                );
               },
             ),
           ),
+          const SizedBox(height: 10),
           Card(
             margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -45,7 +53,14 @@ class DetailsPageContent extends StatelessWidget {
               subtitle: Text('${viewModel.meeting?.description}'),
               tileColor: Theme.of(context).colorScheme.onPrimary,
               onTap: () {
-                print('Edit description');
+                _showEditDialog(
+                  context: context,
+                  title: 'Edit Description',
+                  initialContent: viewModel.meeting?.description ?? '',
+                  onSave: (newDescription) {
+                    viewModel.editDescription(newDescription);
+                  },
+                );
               },
             ),
           ),
@@ -74,7 +89,7 @@ class DetailsPageContent extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(height: 10),
                   Text('Transcript in progress'),
                 ],
               ),
@@ -87,7 +102,14 @@ class DetailsPageContent extends StatelessWidget {
                 title: Text('Transcript'),
                 subtitle: Text('${viewModel.transcript}'),
                 onTap: () {
-                  print('Edit transcript');
+                  _showEditDialog(
+                    context: context,
+                    title: 'Edit Transcript',
+                    initialContent: viewModel.transcript ?? '',
+                    onSave: (newTranscript) {
+                      viewModel.editTranscript(newTranscript);
+                    },
+                  );
                 },
               ),
             ),
@@ -99,8 +121,56 @@ class DetailsPageContent extends StatelessWidget {
               child: Text('Retry Transcript'),
             ),
           },
+          const SizedBox(height: 10),
+          if (viewModel.transcriptionStatus == TranscriptionStatus.inProgress || viewModel.transcriptionStatus == TranscriptionStatus.completed)
+            Center(
+              child: Text('What would you like to do next?'),
+            ),
+
+          // other buttons
+        ],
+      ),
+    );
+  }
+
+  // Helper method to show edit dialog
+  void _showEditDialog({
+    required BuildContext context,
+    required String title,
+    required String initialContent,
+    required Function(String) onSave,
+  }) {
+    final TextEditingController controller = TextEditingController(text: initialContent);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          maxLines: null, // Allows multiple lines
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Enter text here',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              onSave(controller.text);
+              Navigator.pop(context);
+            },
+            child: Text('Save'),
+          ),
         ],
       ),
     );
   }
 }
+
+

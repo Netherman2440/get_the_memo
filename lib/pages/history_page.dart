@@ -65,8 +65,7 @@ class HistoryItem extends StatelessWidget {
 
   String _formatDateTime(DateTime dateTime) {
     // Format date as HH:mm DD-MM-YYYY
-    return 
-        '${dateTime.day.toString().padLeft(2, '0')}-'
+    return '${dateTime.day.toString().padLeft(2, '0')}-'
         '${dateTime.month.toString().padLeft(2, '0')}-'
         '${dateTime.year} '
         '${dateTime.hour.toString().padLeft(2, '0')}:'
@@ -84,19 +83,47 @@ class HistoryItem extends StatelessWidget {
       margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: ListTile(
-        leading: Icon(
-          Icons.mic,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+        leading: Icon(Icons.mic, color: Theme.of(context).colorScheme.primary),
         trailing: IconButton(
           icon: Icon(Icons.delete),
           onPressed: () {
-            print('Delete meeting');
+            showDialog(
+              context: context,
+              builder:
+                  (context) => AlertDialog(
+                    title: Text('Delete Meeting'),
+                    content: Text(
+                      'Are you sure you want to delete this meeting?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          viewModel.deleteMeeting(meetingId);
+                          Navigator.of(context).pop();
+                        },
+                        style: TextButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                        ),
+                        child: Text('Delete',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onError,
+                        ),
+                        ),
+                      ),
+                    ],
+                  ),
+            );
           },
         ),
         contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         title: Text(
-          title,  
+          title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
@@ -114,21 +141,23 @@ class HistoryItem extends StatelessWidget {
             Text(
               '${_formatDateTime(date)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withOpacity(0.8),
               ),
             ),
             Text(
               duration,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withOpacity(0.8),
               ),
             ),
           ],
         ),
         onTap: () {
-          
-          Navigator.of(context).push(MaterialPageRoute(builder: (context) => DetailsPage(meetingId: meetingId)));
-          
+          viewModel.showDetails(context, meetingId);
         },
       ),
     );

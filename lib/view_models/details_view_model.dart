@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/models/meeting.dart';
-import 'package:get_the_memo/services/background_service.dart';
+
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/services/openai_service.dart' as OpenAiService;
 import 'package:get_the_memo/services/whisper_service.dart';
@@ -32,9 +32,11 @@ class DetailsViewModel extends ChangeNotifier {
     try {
       transcriptionStatus = await getTranscriptionStatus(meetingId);
       summaryStatus = await getSummaryStatus(meetingId);
+      tasksStatus = await getTasksStatus(meetingId);
       meeting = await DatabaseService.getMeeting(meetingId);
       transcript = await DatabaseService.getTranscription(meetingId);
       summary = await DatabaseService.getSummary(meetingId);
+      tasks = await DatabaseService.getTasks(meetingId);
     } catch (e) {
       print('Failed to load meeting details, $e');
     }
@@ -74,8 +76,9 @@ class DetailsViewModel extends ChangeNotifier {
   Future<void> createTasks(String meetingId) async {
     tasksStatus = TasksStatus.inProgress;
     notifyListeners();
-    tasks = await OpenAiService.actionPoints(transcript!);
-    tasksStatus = TasksStatus.completed;
+
+    tasks = await OpenAiService.actionPoints(transcript!, meetingId);
+    tasksStatus = await getTasksStatus(meetingId);
     notifyListeners();
   }
 
@@ -100,6 +103,12 @@ class DetailsViewModel extends ChangeNotifier {
   void editSummary(String summary) async {
     this.summary = summary;
     await DatabaseService.updateSummary(meeting!.id, summary);
+    notifyListeners();
+  }
+
+  Future<void> editTasks(String tasks) async {
+    this.tasks = tasks;
+    await DatabaseService.updateTasks(meeting!.id, tasks);
     notifyListeners();
   }
 
@@ -135,6 +144,21 @@ class DetailsViewModel extends ChangeNotifier {
       status = SummaryStatus.completed;
     } else if (prefs.getBool('summary_error_$meetingId') ?? false) {
       status = SummaryStatus.failed;
+    }
+
+    return status;
+  }
+
+  Future<TasksStatus> getTasksStatus(String meetingId) async {
+    TasksStatus status = TasksStatus.notStarted;
+
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('tasks_in_progress_$meetingId') ?? false) {
+      status = TasksStatus.inProgress;
+    } else if (prefs.getBool('tasks_completed_$meetingId') ?? false) {
+      status = TasksStatus.completed;
+    } else if (prefs.getBool('tasks_error_$meetingId') ?? false) {
+      status = TasksStatus.failed;
     }
 
     return status;
@@ -197,6 +221,67 @@ class DetailsViewModel extends ChangeNotifier {
             createSummary(meeting!.id);
           },
           child: const Text('Retry Summary'),
+        );
+    }
+  }
+
+  Widget getActionPointsSection(BuildContext context) {
+    if (transcript == null || transcript!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    switch (tasksStatus) {
+      case TasksStatus.notStarted:
+        return ElevatedButton(
+          onPressed: () {
+            createTasks(meeting!.id);
+          },
+          child: const Text('Create Action Points'),
+        );
+      case TasksStatus.inProgress:
+        return ElevatedButton(
+          onPressed: null,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text('Action Points in progress'),
+            ],
+          ),
+        );
+      case TasksStatus.completed:
+        return Card(
+          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: ListTile(
+            title: Text('Action Points'),
+            subtitle: Text(tasks!),
+            onTap: () {
+              showEditDialog(
+                context: context,
+                title: 'Edit Action Points',
+                initialContent: tasks!,
+                onSave: editTasks,
+              );
+            },
+          ),
+        );
+      case TasksStatus.failed:
+        return ElevatedButton(
+          onPressed: () {
+            createTasks(meeting!.id);
+          },
+          child: const Text('Retry Action Points'),
         );
     }
   }

@@ -124,13 +124,13 @@ class DetailsPageContent extends StatelessWidget {
             ),
           },
           const SizedBox(height: 10),
-          if (viewModel.transcriptionStatus == TranscriptionStatus.inProgress || viewModel.transcriptionStatus == TranscriptionStatus.completed)
-            Center(
-              child: Text('What would you like to do next?'),
-            ),
-
+          
           // summary
           viewModel.getSummarySection(context),
+
+          // Add after summary section
+          const SizedBox(height: 10),
+          viewModel.getActionPointsSection(context),
         ],
       ),
     );

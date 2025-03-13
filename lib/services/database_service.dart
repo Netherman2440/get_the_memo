@@ -9,7 +9,7 @@ class DatabaseService {
 
   // Constants for database setup
   static const String _databaseName = 'meetings.db';
-  static const int _databaseVersion = 4;
+  static const int _databaseVersion = 5;
 
   // Constants for meetings table
   static const String tableMeetings = 'meetings';
@@ -32,6 +32,12 @@ class DatabaseService {
   static const String columnSummaryId = 'id';
   static const String columnSummaryText = 'summaryText';
   static const String columnSummaryCreatedAt = 'createdAt';
+
+  // Add new constants for tasks table
+  static const String tableTasks = 'tasks';
+  static const String columnTasksId = 'id';
+  static const String columnTasksText = 'tasksText';
+  static const String columnTasksCreatedAt = 'createdAt';
 
   static Future<void> init() async {
     // Get the application documents directory
@@ -81,6 +87,16 @@ class DatabaseService {
         FOREIGN KEY ($columnMeetingId) REFERENCES $tableMeetings ($columnId) ON DELETE CASCADE
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE $tableTasks (
+        $columnTasksId TEXT PRIMARY KEY,
+        $columnMeetingId TEXT NOT NULL,
+        $columnTasksText TEXT NOT NULL,
+        $columnTasksCreatedAt TEXT NOT NULL,
+        FOREIGN KEY ($columnMeetingId) REFERENCES $tableMeetings ($columnId) ON DELETE CASCADE
+      )
+    ''');
   }
 
   // Handle database upgrades
@@ -95,6 +111,7 @@ class DatabaseService {
       await db.execute('DROP TABLE IF EXISTS $tableTranscriptions');
       await db.execute('DROP TABLE IF EXISTS $tableMeetings');
       await db.execute('DROP TABLE IF EXISTS $tableSummary');
+      await db.execute('DROP TABLE IF EXISTS $tableTasks');
 
       // Recreate all tables
       await _createDb(db, newVersion);
@@ -268,4 +285,42 @@ class DatabaseService {
     );
   }
   //endregion
+
+  // Add CRUD methods for tasks
+  static Future<void> insertTasks(String meetingId, String tasks) async {
+    final tasksId = 'task_${DateTime.now().millisecondsSinceEpoch}_$meetingId';
+    await db?.insert(tableTasks, {
+      columnTasksId: tasksId,
+      columnMeetingId: meetingId,
+      columnTasksText: tasks,
+      columnTasksCreatedAt: DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  static Future<String?> getTasks(String meetingId) async {
+    final List<Map<String, dynamic>> maps = await db?.query(
+          tableTasks,
+          columns: [columnTasksText],
+          where: '$columnMeetingId = ?',
+          whereArgs: [meetingId],
+          orderBy: '$columnTasksCreatedAt DESC',
+          limit: 1,
+        ) ??
+        [];
+
+    if (maps.isEmpty) return null;
+    return maps.first[columnTasksText];
+  }
+
+  static Future<void> updateTasks(String meetingId, String tasks) async {
+    await db?.update(
+      tableTasks,
+      {
+        columnTasksText: tasks,
+        columnTasksCreatedAt: DateTime.now().toIso8601String(),
+      },
+      where: '$columnMeetingId = ?',
+      whereArgs: [meetingId],
+    );
+  }
 }

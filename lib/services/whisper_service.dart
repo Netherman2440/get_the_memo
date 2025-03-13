@@ -161,6 +161,11 @@ class WhisperService {
           
         } catch (e) {
           print('Error transcribing chunk ${chunk.path}: $e');
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('transcription_completed_$meetingId', false);
+          await prefs.setBool('transcription_in_progress_$meetingId', false);
+          await prefs.setBool('transcription_error_$meetingId', true);
+
         } finally {
           // Clean up chunk after processing
           if (await chunk.exists()) {

@@ -18,7 +18,6 @@ class DetailsViewModel extends ChangeNotifier {
   SummaryStatus summaryStatus = SummaryStatus.notStarted;
   TasksStatus tasksStatus = TasksStatus.notStarted;
 
-
   // Constructor that accepts meetingId
   DetailsViewModel({String? meetingId}) {
     if (meetingId != null) {
@@ -32,9 +31,10 @@ class DetailsViewModel extends ChangeNotifier {
 
     try {
       transcriptionStatus = await getTranscriptionStatus(meetingId);
+      summaryStatus = await getSummaryStatus(meetingId);
       meeting = await DatabaseService.getMeeting(meetingId);
-       transcript = await DatabaseService.getTranscription(meetingId);
-
+      transcript = await DatabaseService.getTranscription(meetingId);
+      summary = await DatabaseService.getSummary(meetingId);
     } catch (e) {
       print('Failed to load meeting details, $e');
     }
@@ -64,10 +64,10 @@ class DetailsViewModel extends ChangeNotifier {
   Future<void> createSummary(String meetingId) async {
     summaryStatus = SummaryStatus.inProgress;
     notifyListeners();
-    
-    summary = await OpenAiService.summarize(transcript!);
 
-    summaryStatus = SummaryStatus.completed;
+    summary = await OpenAiService.summarize(transcript!, meetingId);
+
+    summaryStatus = await getSummaryStatus(meetingId);
     notifyListeners();
   }
 
@@ -96,9 +96,6 @@ class DetailsViewModel extends ChangeNotifier {
     await DatabaseService.updateTranscription(meeting!.id, transcript);
     notifyListeners();
   }
-  
-  
-  
 
   // Reload current meeting if needed
   Future<void> refresh() async {
@@ -122,8 +119,22 @@ class DetailsViewModel extends ChangeNotifier {
     return status;
   }
 
-  getSummarySection(BuildContext context) {
+  Future<SummaryStatus> getSummaryStatus(String meetingId) async {
+    SummaryStatus status = SummaryStatus.notStarted;
 
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool('summary_in_progress_$meetingId') ?? false) {
+      status = SummaryStatus.inProgress;
+    } else if (prefs.getBool('summary_completed_$meetingId') ?? false) {
+      status = SummaryStatus.completed;
+    } else if (prefs.getBool('summary_error_$meetingId') ?? false) {
+      status = SummaryStatus.failed;
+    }
+
+    return status;
+  }
+
+  getSummarySection(BuildContext context) {
     if (transcript == null || transcript!.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -163,6 +174,7 @@ class DetailsViewModel extends ChangeNotifier {
 }
 
 enum TranscriptionStatus { notStarted, inProgress, completed, failed }
-enum SummaryStatus { notStarted, inProgress, completed, failed }
-enum TasksStatus { notStarted, inProgress, completed, failed }
 
+enum SummaryStatus { notStarted, inProgress, completed, failed }
+
+enum TasksStatus { notStarted, inProgress, completed, failed }

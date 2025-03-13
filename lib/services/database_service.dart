@@ -4,14 +4,13 @@ import 'package:path/path.dart' as path;
 
 import 'package:get_the_memo/models/meeting.dart';
 
-
 class DatabaseService {
   static Database? db;
-  
+
   // Constants for database setup
   static const String _databaseName = 'meetings.db';
-  static const int _databaseVersion = 3;
-  
+  static const int _databaseVersion = 4;
+
   // Constants for meetings table
   static const String tableMeetings = 'meetings';
   static const String columnId = 'id';
@@ -20,7 +19,7 @@ class DatabaseService {
   static const String columnCreatedAt = 'createdAt';
   static const String columnAudioPath = 'audioUrl';
   static const String columnDuration = 'duration';
-  
+
   // Constants for transcriptions table
   static const String tableTranscriptions = 'transcriptions';
   static const String columnTranscriptionId = 'id';
@@ -28,13 +27,19 @@ class DatabaseService {
   static const String columnTranscriptionText = 'transcriptionText';
   static const String columnTranscriptionCreatedAt = 'createdAt';
 
+  // Constants for summary table
+  static const String tableSummary = 'summaries';
+  static const String columnSummaryId = 'id';
+  static const String columnSummaryText = 'summaryText';
+  static const String columnSummaryCreatedAt = 'createdAt';
+
   static Future<void> init() async {
     // Get the application documents directory
     WidgetsFlutterBinding.ensureInitialized();
-    
+
     final appDir = await getDatabasesPath();
     final dbPath = path.join(appDir, _databaseName);
-    
+
     // Open/create database
     db = await openDatabase(
       dbPath,
@@ -56,7 +61,7 @@ class DatabaseService {
         $columnDuration INTEGER
       )
     ''');
-    
+
     await db.execute('''
       CREATE TABLE $tableTranscriptions (
         $columnTranscriptionId TEXT PRIMARY KEY,
@@ -66,23 +71,39 @@ class DatabaseService {
         FOREIGN KEY ($columnMeetingId) REFERENCES $tableMeetings ($columnId) ON DELETE CASCADE
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE $tableSummary (
+        $columnSummaryId TEXT PRIMARY KEY,
+        $columnMeetingId TEXT NOT NULL,
+        $columnSummaryText TEXT NOT NULL,
+        $columnSummaryCreatedAt TEXT NOT NULL,
+        FOREIGN KEY ($columnMeetingId) REFERENCES $tableMeetings ($columnId) ON DELETE CASCADE
+      )
+    ''');
   }
 
   // Handle database upgrades
-  static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+  static Future<void> _onUpgrade(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
     // For simplicity, drop all data and recreate tables
     if (oldVersion < newVersion) {
       // Drop existing tables if they exist
       await db.execute('DROP TABLE IF EXISTS $tableTranscriptions');
       await db.execute('DROP TABLE IF EXISTS $tableMeetings');
-      
+      await db.execute('DROP TABLE IF EXISTS $tableSummary');
+
       // Recreate all tables
       await _createDb(db, newVersion);
-      
+
       print('Database upgraded to version 3: Created transcriptions table');
     }
   }
 
+  //region Meetings
   // Insert new meeting
   static Future<void> insertMeeting(Meeting meeting) async {
     await db?.insert(
@@ -94,19 +115,22 @@ class DatabaseService {
 
   // Get all meetings
   static Future<List<Meeting>> getMeetings() async {
-    final List<Map<String, dynamic>> maps = await db?.query(tableMeetings) ?? [];
+    final List<Map<String, dynamic>> maps =
+        await db?.query(tableMeetings) ?? [];
     return maps.map((map) => Meeting.fromJson(map)).toList();
   }
 
   // Get single meeting by id
   static Future<Meeting?> getMeeting(String id) async {
-    final List<Map<String, dynamic>> maps = await db?.query(
-      tableMeetings,
-      where: '$columnId = ?',
-      whereArgs: [id],
-      limit: 1,
-    ) ?? [];
-    
+    final List<Map<String, dynamic>> maps =
+        await db?.query(
+          tableMeetings,
+          where: '$columnId = ?',
+          whereArgs: [id],
+          limit: 1,
+        ) ??
+        [];
+
     if (maps.isEmpty) return null;
     return Meeting.fromJson(maps.first);
   }
@@ -123,47 +147,50 @@ class DatabaseService {
 
   // Delete meeting
   static Future<void> deleteMeeting(String id) async {
-    await db?.delete(
-      tableMeetings,
-      where: '$columnId = ?',
-      whereArgs: [id],
-    );
+    await db?.delete(tableMeetings, where: '$columnId = ?', whereArgs: [id]);
+  }
+  //endregion
+
+  //region Transcriptions
+  // Methods for transcriptions
+
+  // Insert new transcription
+  static Future<void> insertTranscription(
+    String meetingId,
+    String transcription,
+  ) async {
+    final transcriptionId =
+        'trans_${DateTime.now().millisecondsSinceEpoch}_$meetingId';
+    await db?.insert(tableTranscriptions, {
+      columnTranscriptionId: transcriptionId,
+      columnMeetingId: meetingId,
+      columnTranscriptionText: transcription,
+      columnTranscriptionCreatedAt: DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  // Methods for transcriptions
-  
-  // Insert new transcription
-  static Future<void> insertTranscription(String meetingId, String transcription) async {
-    final transcriptionId = 'trans_${DateTime.now().millisecondsSinceEpoch}_$meetingId';
-    await db?.insert(
-      tableTranscriptions,
-      {
-        columnTranscriptionId: transcriptionId,
-        columnMeetingId: meetingId,
-        columnTranscriptionText: transcription,
-        columnTranscriptionCreatedAt: DateTime.now().toIso8601String(),
-      },
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-  }
-  
   // Get transcription for a meeting
   static Future<String?> getTranscription(String meetingId) async {
-    final List<Map<String, dynamic>> maps = await db?.query(
-      tableTranscriptions,
-      columns: [columnTranscriptionText],
-      where: '$columnMeetingId = ?',
-      whereArgs: [meetingId],
-      orderBy: '$columnTranscriptionCreatedAt DESC',
-      limit: 1,
-    ) ?? [];
-    
+    final List<Map<String, dynamic>> maps =
+        await db?.query(
+          tableTranscriptions,
+          columns: [columnTranscriptionText],
+          where: '$columnMeetingId = ?',
+          whereArgs: [meetingId],
+          orderBy: '$columnTranscriptionCreatedAt DESC',
+          limit: 1,
+        ) ??
+        [];
+
     if (maps.isEmpty) return null;
     return maps.first[columnTranscriptionText];
   }
-  
+
   // Update transcription
-  static Future<void> updateTranscription(String meetingId, String transcriptionText) async {
+  static Future<void> updateTranscription(
+    String meetingId,
+    String transcriptionText,
+  ) async {
     await db?.update(
       tableTranscriptions,
       {
@@ -174,7 +201,7 @@ class DatabaseService {
       whereArgs: [meetingId],
     );
   }
-  
+
   // Delete transcription
   static Future<void> deleteTranscription(String transcriptionId) async {
     await db?.delete(
@@ -183,7 +210,7 @@ class DatabaseService {
       whereArgs: [transcriptionId],
     );
   }
-  
+
   // Delete all transcriptions for a meeting
   static Future<void> deleteTranscriptionsForMeeting(String meetingId) async {
     await db?.delete(
@@ -192,4 +219,53 @@ class DatabaseService {
       whereArgs: [meetingId],
     );
   }
+  //endregion
+
+  //region Summary
+
+  // Insert new summary
+  static Future<void> insertSummary(String meetingId, String summary) async {
+    final summaryId = 'sum_${DateTime.now().millisecondsSinceEpoch}_$meetingId';
+    await db?.insert(tableSummary, {
+      columnSummaryId: summaryId,
+      columnMeetingId: meetingId,
+      columnSummaryText: summary,
+      columnSummaryCreatedAt: DateTime.now().toIso8601String(),
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  // Get summary for a meeting
+  static Future<String?> getSummary(String meetingId) async {
+    final List<Map<String, dynamic>> maps =
+        await db?.query(
+          tableSummary,
+          columns: [columnSummaryText],
+          where: '$columnMeetingId = ?',
+          whereArgs: [meetingId],
+          orderBy: '$columnSummaryCreatedAt DESC',
+          limit: 1,
+        ) ??
+        [];
+
+    if (maps.isEmpty) return null;
+    return maps.first[columnSummaryText];
+  }
+
+  static Future<void> updateSummary(String meetingId, String summary) async {
+    await db?.update(
+      tableSummary,
+      {columnSummaryText: summary, columnSummaryCreatedAt: DateTime.now().toIso8601String()},
+      where: '$columnMeetingId = ?',
+      whereArgs: [meetingId],
+    );
+  }
+
+  static Future<void> deleteSummary(String summaryId) async {
+    await db?.delete(
+      tableSummary,
+      where: '$columnSummaryId = ?',
+      whereArgs: [summaryId],
+    );
+  }
+  //endregion
 }

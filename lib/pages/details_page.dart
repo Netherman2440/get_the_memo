@@ -33,7 +33,7 @@ class DetailsPageContent extends StatelessWidget {
               subtitle: Text('${viewModel.meeting?.title}'),
               tileColor: Theme.of(context).colorScheme.onPrimary,
               onTap: () {
-                _showEditDialog(
+                viewModel.showEditDialog(
                   context: context,
                   title: 'Edit Title',
                   initialContent: viewModel.meeting?.title ?? '',
@@ -53,7 +53,7 @@ class DetailsPageContent extends StatelessWidget {
               subtitle: Text('${viewModel.meeting?.description}'),
               tileColor: Theme.of(context).colorScheme.onPrimary,
               onTap: () {
-                _showEditDialog(
+                viewModel.showEditDialog(
                   context: context,
                   title: 'Edit Description',
                   initialContent: viewModel.meeting?.description ?? '',
@@ -66,6 +66,8 @@ class DetailsPageContent extends StatelessWidget {
           ),
           SizedBox(height: 10),
 
+
+// Transcription
           switch (viewModel.transcriptionStatus) {
             TranscriptionStatus.notStarted => ElevatedButton(
               onPressed: () {
@@ -102,7 +104,7 @@ class DetailsPageContent extends StatelessWidget {
                 title: Text('Transcript'),
                 subtitle: Text('${viewModel.transcript}'),
                 onTap: () {
-                  _showEditDialog(
+                  viewModel.showEditDialog(
                     context: context,
                     title: 'Edit Transcript',
                     initialContent: viewModel.transcript ?? '',
@@ -134,44 +136,7 @@ class DetailsPageContent extends StatelessWidget {
     );
   }
 
-  // Helper method to show edit dialog
-  void _showEditDialog({
-    required BuildContext context,
-    required String title,
-    required String initialContent,
-    required Function(String) onSave,
-  }) {
-    final TextEditingController controller = TextEditingController(text: initialContent);
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          maxLines: null, // Allows multiple lines
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Enter text here',
-          ),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              onSave(controller.text);
-              Navigator.pop(context);
-            },
-            child: Text('Save'),
-          ),
-        ],
-      ),
-    );
-  }
+  
 }
 
 

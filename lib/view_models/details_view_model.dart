@@ -97,6 +97,12 @@ class DetailsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void editSummary(String summary) async {
+    this.summary = summary;
+    await DatabaseService.updateSummary(meeting!.id, summary);
+    notifyListeners();
+  }
+
   // Reload current meeting if needed
   Future<void> refresh() async {
     if (_meetingId != null) {
@@ -149,18 +155,41 @@ class DetailsViewModel extends ChangeNotifier {
         );
       case SummaryStatus.inProgress:
         return ElevatedButton(
-          onPressed: () {
-            //createSummary(meeting!.id);
-          },
-          child: const Text('Creating Summary'),
+          onPressed: null,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text('Summary in progress'),
+            ],
+          ),
         );
       case SummaryStatus.completed:
-        return ListTile(
-          title: Text('Summary'),
-          subtitle: Text(summary!),
-          onTap: () {
-            //editSummary(summary!);
-          },
+        return Card(
+          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: ListTile(
+            title: Text('Summary'),
+            subtitle: Text(summary!),
+            onTap: () {
+              showEditDialog(
+                context: context,
+                title: 'Edit Summary',
+                initialContent: summary!,
+                onSave: editSummary,
+              );
+            },
+          ),
         );
       case SummaryStatus.failed:
         return ElevatedButton(
@@ -170,6 +199,47 @@ class DetailsViewModel extends ChangeNotifier {
           child: const Text('Retry Summary'),
         );
     }
+  }
+
+  // Helper method to show edit dialog
+  void showEditDialog({
+    required BuildContext context,
+    required String title,
+    required String initialContent,
+    required Function(String) onSave,
+  }) {
+    final TextEditingController controller = TextEditingController(text: initialContent);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          maxLines: null, // Allows multiple lines
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Enter text here',
+          ),
+          autofocus: true,
+          
+
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              onSave(controller.text);
+              Navigator.pop(context);
+            },
+            child: Text('Save'),
+          ),
+        ],
+      ),
+    );
   }
 }
 

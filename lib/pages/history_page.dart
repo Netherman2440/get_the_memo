@@ -52,7 +52,6 @@ class HistoryItem extends StatelessWidget {
   final String title;
   final DateTime date;
   final String duration;
-  final String transcription;
   final String meetingId;
 
   HistoryItem({
@@ -60,7 +59,6 @@ class HistoryItem extends StatelessWidget {
     required this.date,
     required this.duration,
     required this.meetingId,
-    this.transcription = '',
   });
 
   String _formatDateTime(DateTime dateTime) {

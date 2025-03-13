@@ -163,16 +163,15 @@ class DatabaseService {
   }
   
   // Update transcription
-  static Future<void> updateTranscription(String transcriptionId, String transcriptionText) async {
-    
+  static Future<void> updateTranscription(String meetingId, String transcriptionText) async {
     await db?.update(
       tableTranscriptions,
       {
         columnTranscriptionText: transcriptionText,
         columnTranscriptionCreatedAt: DateTime.now().toIso8601String(),
       },
-      where: '$columnTranscriptionId = ?',
-      whereArgs: [transcriptionId],
+      where: '$columnMeetingId = ?',
+      whereArgs: [meetingId],
     );
   }
   

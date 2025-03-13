@@ -33,11 +33,10 @@ class DetailsViewModel extends ChangeNotifier {
     try {
       transcriptionStatus = await getTranscriptionStatus(meetingId);
       meeting = await DatabaseService.getMeeting(meetingId);
-      var transcriptObj = await DatabaseService.getTranscription(meetingId);
-      var json = jsonDecode(transcriptObj!);
-      transcript = json['text'];
+       transcript = await DatabaseService.getTranscription(meetingId);
+
     } catch (e) {
-      print('Failed to load meeting details');
+      print('Failed to load meeting details, $e');
     }
 
     notifyListeners();
@@ -47,17 +46,17 @@ class DetailsViewModel extends ChangeNotifier {
     transcriptionStatus = TranscriptionStatus.inProgress;
     String audioPath = meeting?.audioUrl ?? '';
     notifyListeners();
-    var transcription = await WhisperService().processTranscription(
+    var transcriptionObj = await WhisperService().processTranscription(
       audioPath: audioPath,
       meetingId: meetingId,
       saveProgress: true,
     );
-    final transcriptionJson = jsonDecode(transcription);
+    final transcriptionJson = jsonDecode(transcriptionObj!);
 
     transcript = transcriptionJson['text'];
     transcriptionStatus = await getTranscriptionStatus(meetingId);
     print('Transcript created: $transcript');
-    await DatabaseService.insertTranscription(meetingId, transcription);
+    await DatabaseService.insertTranscription(meetingId, transcript!);
 
     notifyListeners();
   }

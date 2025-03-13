@@ -116,7 +116,7 @@ class DatabaseService {
       // Recreate all tables
       await _createDb(db, newVersion);
 
-      print('Database upgraded to version 3: Created transcriptions table');
+      print('Database upgraded to version $_databaseVersion: Created transcriptions table');
     }
   }
 

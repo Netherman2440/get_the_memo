@@ -1,6 +1,6 @@
 # Get The Memo 🎯
 
-Get The Memo is an AI-powered tool that automatically generates comprehensive memos from business meetings. It helps teams capture, organize, and share important information efficiently.
+Get The Memo is an AI-powered mobile application that automatically generates comprehensive memos from business meetings. It helps teams capture, organize, and share important information efficiently.
 
 ## 🚀 Features
 
@@ -9,11 +9,12 @@ Get The Memo is an AI-powered tool that automatically generates comprehensive me
 - Key points extraction
 - Action items identification
 
-
 ## 📋 Prerequisites
 
-- Python 3.8 or higher
-- FFmpeg (for audio processing)
+- Flutter SDK
+- Dart SDK
+- Android Studio or VS Code with Flutter extensions
+- A mobile device or emulator (Android/iOS)
 - Internet connection for AI services
 
 ## 🛠️ Installation
@@ -29,13 +30,14 @@ cd get_the_memo
 ```bash
 flutter pub get
 ```
-3. Run the app
+
+3. Run the application on your device or emulator
 
 ```bash
 flutter run
 ```
 
-You ready to go!
+You're ready to go!
 
 ## 📝 License
 

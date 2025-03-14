@@ -43,7 +43,7 @@ This project is free to use and modify.
 
 ## 👥 Authors
 
-- Ignacy Zając - Initial work - [Ignacy Zając](https://github.com/ignacyzajac)
+- [Ignacy Zając](https://github.com/Netherman2440)
 
 ## 🙏 Acknowledgments
 

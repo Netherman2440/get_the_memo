@@ -47,12 +47,6 @@ This project is free to use and modify.
 
 - [Ignacy Zając](https://github.com/Netherman2440)
 
-## 🙏 Acknowledgments
-
-- OpenAI for providing the AI capabilities
-- All contributors who have helped with the project
-- The open-source community
-
 
 
 

@@ -7,6 +7,7 @@ import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/services/openai_service.dart' as OpenAiService;
 import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DetailsViewModel extends ChangeNotifier {
   Meeting? meeting;
@@ -479,6 +480,49 @@ class DetailsViewModel extends ChangeNotifier {
             ],
           ),
     );
+  }
+
+  Future<void> sendEmailWithMeetingDetails() async {
+    // Prepare email content
+    final subject = 'Meeting: ${meeting?.title ?? "No title"}';
+    final body = '''
+Meeting Details:
+Title: ${meeting?.title ?? "No title"}
+Description: ${meeting?.description ?? "No description"}
+
+Summary:
+${summary ?? "No summary available"}
+
+Action Points:
+${tasks.isNotEmpty ? tasks.map((task) => "- $task").join("\n") : "No action points available"}
+
+Transcript:
+${transcript ?? "No transcript available"}
+''';
+
+    // Create the URL
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'zajacignacy@gmail.com', // recipient email address
+      query: encodeQueryParameters({'subject': subject, 'body': body}),
+    );
+
+    // Launch the URL
+    if (await canLaunchUrl(emailLaunchUri)) {
+      await launchUrl(emailLaunchUri);
+    } else {
+      throw 'Could not launch email client';
+    }
+  }
+
+  // Helper method to encode query parameters
+  String? encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
+        .join('&');
   }
 }
 

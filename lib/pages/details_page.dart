@@ -85,6 +85,21 @@ class DetailsPageContent extends StatelessWidget {
         
             const SizedBox(height: 10),
             viewModel.getActionPointsSection(context),
+            
+            const SizedBox(height: 20),
+            
+            // Email button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                onPressed: () => viewModel.sendEmailWithMeetingDetails(),
+                icon: const Icon(Icons.email),
+                label: const Text('Share via Email'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                ),
+              ),
+            ),
           ],
         ),
       ),

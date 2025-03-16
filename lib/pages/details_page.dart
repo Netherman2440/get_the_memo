@@ -23,120 +23,71 @@ class DetailsPageContent extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('Details')),
-      body: Column(
-        children: [
-          Card(
-            margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: ListTile(
-              title: Text('Title'),
-              subtitle: Text('${viewModel.meeting?.title}'),
-              tileColor: Theme.of(context).colorScheme.onPrimary,
-              onTap: () {
-                viewModel.showEditDialog(
-                  context: context,
-                  title: 'Edit Title',
-                  initialContent: viewModel.meeting?.title ?? '',
-                  onSave: (newTitle) {
-                    viewModel.editTitle(newTitle);
-                  },
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 10),
-          Card(
-            margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: ListTile(
-              title: Text('Description'),
-              subtitle: Text('${viewModel.meeting?.description}'),
-              tileColor: Theme.of(context).colorScheme.onPrimary,
-              onTap: () {
-                viewModel.showEditDialog(
-                  context: context,
-                  title: 'Edit Description',
-                  initialContent: viewModel.meeting?.description ?? '',
-                  onSave: (newDescription) {
-                    viewModel.editDescription(newDescription);
-                  },
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 10),
-
-
-// Transcription
-          switch (viewModel.transcriptionStatus) {
-            TranscriptionStatus.notStarted => ElevatedButton(
-              onPressed: () {
-                viewModel.createTranscript(viewModel.meeting?.id ?? '');
-              },
-              child: Text('Create Transcript'),
-            ),
-
-            TranscriptionStatus.inProgress => ElevatedButton(
-              onPressed: null,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Card(
+              margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: ExpansionTile(
+                title: Text('Title'),
                 children: [
-                  SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
+                  ListTile(
+                    subtitle: Text('${viewModel.meeting?.title}'),
+                    onTap: () {
+                      viewModel.showEditDialog(
+                        context: context,
+                        title: 'Edit Title',
+                        initialContent: viewModel.meeting?.title ?? '',
+                        onSave: (newTitle) {
+                          viewModel.editTitle(newTitle);
+                        },
+                      );
+                    },
                   ),
-                  const SizedBox(height: 10),
-                  Text('Transcript in progress'),
                 ],
               ),
             ),
-
-            TranscriptionStatus.completed => Card(
+            const SizedBox(height: 10),
+            Card(
               margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: ListTile(
-                title: Text('Transcript'),
-                subtitle: Text('${viewModel.transcript}'),
-                onTap: () {
-                  viewModel.showEditDialog(
-                    context: context,
-                    title: 'Edit Transcript',
-                    initialContent: viewModel.transcript ?? '',
-                    onSave: (newTranscript) {
-                      viewModel.editTranscript(newTranscript);
+              child: ExpansionTile(
+                title: Text('Description'),
+                children: [
+                  ListTile(
+                    title: Text('Description'),
+                    subtitle: Text('${viewModel.meeting?.description}'),
+                    
+                    onTap: () {
+                    viewModel.showEditDialog(
+                      context: context,
+                      title: 'Edit Description',
+                      initialContent: viewModel.meeting?.description ?? '',
+                      onSave: (newDescription) {
+                        viewModel.editDescription(newDescription);
+                      },
+                    );
                     },
-                  );
-                },
+                  ),
+                ],
               ),
             ),
-
-            TranscriptionStatus.failed => ElevatedButton(
-              onPressed: () {
-                viewModel.createTranscript(viewModel.meeting?.id ?? '');
-              },
-              child: Text('Retry Transcript'),
-            ),
-          },
-          const SizedBox(height: 10),
-          
-          // summary
-          viewModel.getSummarySection(context),
-
-          // Add after summary section
-          const SizedBox(height: 10),
-          viewModel.getActionPointsSection(context),
-        ],
+            SizedBox(height: 10),
+        
+            // Transcription section
+            viewModel.getTranscriptionSection(context),
+        
+            const SizedBox(height: 10),
+        
+            // Summary section
+            viewModel.getSummarySection(context),
+        
+            const SizedBox(height: 10),
+            viewModel.getActionPointsSection(context),
+          ],
+        ),
       ),
     );
   }
-
-  
 }
-
-

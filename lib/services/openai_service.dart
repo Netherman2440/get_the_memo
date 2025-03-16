@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_the_memo/prompts/summarize.dart';
@@ -15,11 +17,21 @@ class OpenAiService {
   Future<OpenAIChatCompletionChoiceMessageModel> chat(
     List<OpenAIChatCompletionChoiceMessageModel> messages,
   ) async {
-    final completion = await OpenAI.instance.chat.create(
-      model: model,
-      messages: messages,
-    );
-    return completion.choices.first.message;
+    try {
+      final completion = await OpenAI.instance.chat.create(
+        model: model,
+        messages: messages,
+      );
+      return completion.choices.first.message;
+    } catch (e) {
+      print(e);
+      return OpenAIChatCompletionChoiceMessageModel(
+        role: OpenAIChatMessageRole.assistant,
+        content: [
+          OpenAIChatCompletionChoiceMessageContentItemModel.text('Error: $e'),
+        ],
+      );
+    }
   }
 }
 
@@ -78,12 +90,14 @@ Future<String> actionPoints(String text, String meetingId) async {
     ];
     final completion = await service.chat(messages);
     final completionText = completion.content!.first.text!;
-    
+    print('Completion Text: $completionText');
+    // Parse the completion text into an array of action points
+
     await DatabaseService.insertTasks(meetingId, completionText);
     final prefs = await SharedPreferences.getInstance();
     prefs.setBool('tasks_in_progress_$meetingId', false);
     prefs.setBool('tasks_completed_$meetingId', true);
-    
+
     return completionText;
   } catch (e) {
     print(e);

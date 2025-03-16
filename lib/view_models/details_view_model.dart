@@ -13,7 +13,7 @@ class DetailsViewModel extends ChangeNotifier {
   String? _meetingId;
   String? transcript;
   String? summary;
-  String? tasks;
+  List<String> tasks = [];
   TranscriptionStatus transcriptionStatus = TranscriptionStatus.notStarted;
   SummaryStatus summaryStatus = SummaryStatus.notStarted;
   TasksStatus tasksStatus = TasksStatus.notStarted;
@@ -36,7 +36,9 @@ class DetailsViewModel extends ChangeNotifier {
       meeting = await DatabaseService.getMeeting(meetingId);
       transcript = await DatabaseService.getTranscription(meetingId);
       summary = await DatabaseService.getSummary(meetingId);
-      tasks = await DatabaseService.getTasks(meetingId);
+      var tasksJson = await DatabaseService.getTasks(meetingId);
+      tasks = List<String>.from(jsonDecode(tasksJson ?? '[]'));
+      print('Tasks: $tasks');
     } catch (e) {
       print('Failed to load meeting details, $e');
     }
@@ -77,7 +79,8 @@ class DetailsViewModel extends ChangeNotifier {
     tasksStatus = TasksStatus.inProgress;
     notifyListeners();
 
-    tasks = await OpenAiService.actionPoints(transcript!, meetingId);
+    var tasksJson = await OpenAiService.actionPoints(transcript!, meetingId);
+    tasks = List<String>.from(jsonDecode(tasksJson));
     tasksStatus = await getTasksStatus(meetingId);
     notifyListeners();
   }
@@ -106,9 +109,35 @@ class DetailsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> editTasks(String tasks) async {
+  Future<void> editTasks(List<String> tasks) async {
     this.tasks = tasks;
-    await DatabaseService.updateTasks(meeting!.id, tasks);
+    await DatabaseService.updateTasks(meeting!.id, jsonEncode(tasks));
+    notifyListeners();
+  }
+
+  Future<void> editActionPoint(int index, String newValue) async {
+    // Check if index is valid
+    if (index >= 0 && index < tasks.length) {
+      // Update the specific task at the given index
+      tasks[index] = newValue;
+      // Save updated tasks to database
+      await DatabaseService.updateTasks(meeting!.id, jsonEncode(tasks));
+      notifyListeners();
+    }
+  }
+
+  // Add a new method to add an action point
+  Future<void> addActionPoint(String actionPoint) async {
+    if (actionPoint.isNotEmpty) {
+      tasks.add(actionPoint);
+      await DatabaseService.updateTasks(meeting!.id, jsonEncode(tasks));
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteActionPoint(String actionPoint) async {
+    tasks.remove(actionPoint);
+    await DatabaseService.updateTasks(meeting!.id, jsonEncode(tasks));
     notifyListeners();
   }
 
@@ -164,6 +193,67 @@ class DetailsViewModel extends ChangeNotifier {
     return status;
   }
 
+  Widget getTranscriptionSection(BuildContext context) {
+    switch (transcriptionStatus) {
+      case TranscriptionStatus.notStarted:
+        return ElevatedButton(
+          onPressed: () {
+            createTranscript(meeting!.id);
+          },
+          child: const Text('Create Transcript'),
+        );
+      case TranscriptionStatus.inProgress:
+        return ElevatedButton(
+          onPressed: null,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text('Transcription in progress'),
+            ],
+          ),
+        );
+      case TranscriptionStatus.completed:
+        return Card(
+          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: ExpansionTile(
+            title: Text('Transcript'),
+            children: [
+              ListTile(
+                subtitle: Text(transcript!),
+                onTap: () {
+                  showEditDialog(
+                    context: context,
+                    title: 'Edit Transcript',
+                    initialContent: transcript!,
+                    onSave: editTranscript,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      case TranscriptionStatus.failed:
+        return ElevatedButton(
+          onPressed: () {
+            createTranscript(meeting!.id);
+          },
+          child: const Text('Retry Transcription'),
+        );
+    }
+  }
+
   getSummarySection(BuildContext context) {
     if (transcript == null || transcript!.isEmpty) {
       return const SizedBox.shrink();
@@ -202,17 +292,21 @@ class DetailsViewModel extends ChangeNotifier {
         return Card(
           margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: ListTile(
+          child: ExpansionTile(
             title: Text('Summary'),
-            subtitle: Text(summary!),
-            onTap: () {
-              showEditDialog(
-                context: context,
-                title: 'Edit Summary',
-                initialContent: summary!,
-                onSave: editSummary,
-              );
-            },
+            children: [
+              ListTile(
+                subtitle: Text(summary!),
+                onTap: () {
+                  showEditDialog(
+                    context: context,
+                    title: 'Edit Summary',
+                    initialContent: summary!,
+                    onSave: editSummary,
+                  );
+                },
+              ),
+            ],
           ),
         );
       case SummaryStatus.failed:
@@ -263,17 +357,35 @@ class DetailsViewModel extends ChangeNotifier {
         return Card(
           margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: ListTile(
+          child: ExpansionTile(
             title: Text('Action Points'),
-            subtitle: Text(tasks!),
-            onTap: () {
-              showEditDialog(
-                context: context,
-                title: 'Edit Action Points',
-                initialContent: tasks!,
-                onSave: editTasks,
-              );
-            },
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: _buildActionPointsList(tasks, context),
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16.0, bottom: 8.0),
+                  child: FloatingActionButton.small(
+                    onPressed: () {
+                      // Show dialog to add a new action point
+                      showEditDialog(
+                        context: context,
+                        title: 'Add New Action Point',
+                        initialContent: '',
+                        onSave: (newValue) => addActionPoint(newValue),
+                      );
+                    },
+                    child: const Icon(Icons.add),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       case TasksStatus.failed:
@@ -286,6 +398,47 @@ class DetailsViewModel extends ChangeNotifier {
     }
   }
 
+  // Helper method to parse and build action points list
+  List<Widget> _buildActionPointsList(
+    List<String> actionPointsText,
+    BuildContext context,
+  ) {
+    // Split the text by new lines
+    List<Widget> widgets = [];
+
+    for (var i = 0; i < actionPointsText.length; i++) {
+      final line = actionPointsText[i];
+      final index = i; // Capture the index for use in callbacks
+
+      widgets.add(
+        Card(
+          margin: const EdgeInsets.only(bottom: 8.0),
+          child: ListTile(
+            //leading: const Text('•', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+            title: Text(line),
+            trailing: IconButton(
+              icon: const Icon(Icons.close, color: Colors.red),
+              onPressed: () {
+                deleteActionPoint(line);
+              },
+            ),
+            onTap: () {
+              // Call the edit dialog with the current action point
+              showEditDialog(
+                context: context,
+                title: 'Edit Action Point',
+                initialContent: line,
+                onSave: (newValue) => editActionPoint(index, newValue),
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+    return widgets;
+  }
+
   // Helper method to show edit dialog
   void showEditDialog({
     required BuildContext context,
@@ -293,37 +446,38 @@ class DetailsViewModel extends ChangeNotifier {
     required String initialContent,
     required Function(String) onSave,
   }) {
-    final TextEditingController controller = TextEditingController(text: initialContent);
+    final TextEditingController controller = TextEditingController(
+      text: initialContent,
+    );
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          maxLines: null, // Allows multiple lines
-          decoration: InputDecoration(
-            border: OutlineInputBorder(),
-            hintText: 'Enter text here',
+      builder:
+          (context) => AlertDialog(
+            title: Text(title),
+            content: TextField(
+              controller: controller,
+              maxLines: null, // Allows multiple lines
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: 'Enter text here',
+              ),
+              autofocus: true,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  onSave(controller.text);
+                  Navigator.pop(context);
+                },
+                child: Text('Save'),
+              ),
+            ],
           ),
-          autofocus: true,
-          
-
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              onSave(controller.text);
-              Navigator.pop(context);
-            },
-            child: Text('Save'),
-          ),
-        ],
-      ),
     );
   }
 }

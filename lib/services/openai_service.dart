@@ -7,9 +7,9 @@ import 'package:get_the_memo/prompts/action_points.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class OpenAiService {
+class OpenAIService {
   final String model = "o3-mini";
-  OpenAiService() {
+  OpenAIService() {
     OpenAI.apiKey = dotenv.get('OPENAI_API_KEY');
     OpenAI.requestsTimeOut = const Duration(seconds: 3600);
   }
@@ -33,79 +33,82 @@ class OpenAiService {
       );
     }
   }
-}
 
-Future<String> summarize(String text, String meetingId) async {
-  try {
-    final service = OpenAiService();
-    final messages = [
-      OpenAIChatCompletionChoiceMessageModel(
-        role: OpenAIChatMessageRole.system,
-        content: [
-          OpenAIChatCompletionChoiceMessageContentItemModel.text(
-            summarizePrompt,
-          ),
-        ],
-      ),
-      OpenAIChatCompletionChoiceMessageModel(
-        role: OpenAIChatMessageRole.user,
-        content: [OpenAIChatCompletionChoiceMessageContentItemModel.text(text)],
-      ),
-    ];
-    final completion = await service.chat(messages);
-    final completionText = completion.content!.first.text!;
-    await DatabaseService.insertSummary(meetingId, completionText);
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setBool('summary_in_progress_$meetingId', false);
-    prefs.setBool('summary_completed_$meetingId', true);
-    return completionText;
-  } catch (e) {
-    print(e);
-    await DatabaseService.updateSummary(meetingId, 'Error: $e');
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setBool('summary_error_$meetingId', true);
-    prefs.setBool('summary_in_progress_$meetingId', false);
-    prefs.setBool('summary_completed_$meetingId', false);
+  Future<String> summarize(String text, String meetingId) async {
+    try {
+      final messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.system,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(
+              summarizePrompt,
+            ),
+          ],
+        ),
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.user,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(text),
+          ],
+        ),
+      ];
+      final completion = await chat(messages);
+      final completionText = completion.content!.first.text!;
+      await DatabaseService.insertSummary(meetingId, completionText);
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setBool('summary_in_progress_$meetingId', false);
+      prefs.setBool('summary_completed_$meetingId', true);
+      return completionText;
+    } catch (e) {
+      print(e);
+      await DatabaseService.updateSummary(meetingId, 'Error: $e');
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setBool('summary_error_$meetingId', true);
+      prefs.setBool('summary_in_progress_$meetingId', false);
+      prefs.setBool('summary_completed_$meetingId', false);
 
-    return '';
+      return '';
+    }
   }
-}
 
-Future<String> actionPoints(String text, String meetingId) async {
-  try {
-    final service = OpenAiService();
-    final messages = [
-      OpenAIChatCompletionChoiceMessageModel(
-        role: OpenAIChatMessageRole.system,
-        content: [
-          OpenAIChatCompletionChoiceMessageContentItemModel.text(
-            actionPointsPrompt,
-          ),
-        ],
-      ),
-      OpenAIChatCompletionChoiceMessageModel(
-        role: OpenAIChatMessageRole.user,
-        content: [OpenAIChatCompletionChoiceMessageContentItemModel.text(text)],
-      ),
-    ];
-    final completion = await service.chat(messages);
-    final completionText = completion.content!.first.text!;
-    print('Completion Text: $completionText');
-    // Parse the completion text into an array of action points
+  Future<String> actionPoints(String text, String meetingId) async {
+    try {
 
-    await DatabaseService.insertTasks(meetingId, completionText);
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setBool('tasks_in_progress_$meetingId', false);
-    prefs.setBool('tasks_completed_$meetingId', true);
+      final messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.system,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(
+              actionPointsPrompt,
+            ),
+          ],
+        ),
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.user,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(text),
+          ],
+        ),
+      ];
+      final completion = await chat(messages);
+      final completionText = completion.content!.first.text!;
+      print('Completion Text: $completionText');
+      // Parse the completion text into an array of action points
 
-    return completionText;
-  } catch (e) {
-    print(e);
-    await DatabaseService.updateTasks(meetingId, 'Error: $e');
-    final prefs = await SharedPreferences.getInstance();
-    prefs.setBool('tasks_error_$meetingId', true);
-    prefs.setBool('tasks_in_progress_$meetingId', false);
-    prefs.setBool('tasks_completed_$meetingId', false);
-    return '';
+      await DatabaseService.insertTasks(meetingId, completionText);
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setBool('tasks_in_progress_$meetingId', false);
+      prefs.setBool('tasks_completed_$meetingId', true);
+
+      return completionText;
+    } catch (e) {
+      print(e);
+      await DatabaseService.updateTasks(meetingId, 'Error: $e');
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setBool('tasks_error_$meetingId', true);
+      prefs.setBool('tasks_in_progress_$meetingId', false);
+      prefs.setBool('tasks_completed_$meetingId', false);
+      return '';
+    }
   }
 }

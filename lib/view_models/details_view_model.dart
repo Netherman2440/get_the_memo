@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get_the_memo/models/meeting.dart';
 
 import 'package:get_the_memo/services/database_service.dart';
-import 'package:get_the_memo/services/openai_service.dart' as OpenAiService;
+import 'package:get_the_memo/services/openai_service.dart';
 import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -69,8 +69,8 @@ class DetailsViewModel extends ChangeNotifier {
   Future<void> createSummary(String meetingId) async {
     summaryStatus = SummaryStatus.inProgress;
     notifyListeners();
-
-    summary = await OpenAiService.summarize(transcript!, meetingId);
+    final service = OpenAIService();
+    summary = await service.summarize(transcript!, meetingId);
 
     summaryStatus = await getSummaryStatus(meetingId);
     notifyListeners();
@@ -79,8 +79,8 @@ class DetailsViewModel extends ChangeNotifier {
   Future<void> createTasks(String meetingId) async {
     tasksStatus = TasksStatus.inProgress;
     notifyListeners();
-
-    var tasksJson = await OpenAiService.actionPoints(transcript!, meetingId);
+    final service = OpenAIService();
+    var tasksJson = await service.actionPoints(transcript!, meetingId);
     tasks = List<String>.from(jsonDecode(tasksJson));
     tasksStatus = await getTasksStatus(meetingId);
     notifyListeners();

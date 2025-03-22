@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_the_memo/services/process_service.dart';
 import 'package:provider/provider.dart';
 import 'package:get_the_memo/view_models/record_viewmodel.dart';
 
@@ -6,7 +7,8 @@ class RecordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => RecordViewModel(),
+      create: (_) => RecordViewModel(processService: context.read<ProcessService>()),
+
       child: _RecordPageContent(),
     );
   }
@@ -15,7 +17,9 @@ class RecordPage extends StatelessWidget {
 class _RecordPageContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    
     final viewModel = context.watch<RecordViewModel>();
+    final processService = context.watch<ProcessService>(); //todo: inject this to viewmodel
 
     return Scaffold(
       appBar: AppBar(

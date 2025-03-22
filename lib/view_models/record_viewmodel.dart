@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/services/audio_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
+import 'package:get_the_memo/services/process_service.dart';
 import 'package:just_audio/just_audio.dart';
 
 class RecordViewModel extends ChangeNotifier {
   RecordingState _state = RecordingState.idle;
   String? _currentFileName;
   RecordingState get state => _state;
-
-  RecordViewModel() {
+  final ProcessService processService;//todo: use it
+  
+  RecordViewModel({required this.processService}) {
     DatabaseService.init();
   }
-
 
   // Toggle recording state and handle audio operations
   Future<void> toggleRecording() async {
@@ -22,11 +23,11 @@ class RecordViewModel extends ChangeNotifier {
           _currentFileName = DateTime.now().millisecondsSinceEpoch.toString();
           await AudioService.startRecording(_currentFileName!);
           _state = RecordingState.recording;
-          
+
         case RecordingState.recording:
           await AudioService.pauseRecording();
           _state = RecordingState.paused;
-          
+
         case RecordingState.paused:
           await AudioService.resumeRecording();
           _state = RecordingState.recording;
@@ -59,7 +60,7 @@ class RecordViewModel extends ChangeNotifier {
           description: 'Description',
           createdAt: DateTime.now(),
           audioUrl: path,
-          duration: duration?.inSeconds ?? 0
+          duration: duration?.inSeconds ?? 0,
         );
         await DatabaseService.insertMeeting(meeting);
 

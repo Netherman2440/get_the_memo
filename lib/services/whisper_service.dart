@@ -1,3 +1,4 @@
+import 'package:get_the_memo/services/database_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:math';
@@ -8,7 +9,6 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WhisperService {
-
   final apiKey = dotenv.get('OPENAI_API_KEY');
 
   Future<String> transcribeAudio(String audioPath) async {
@@ -51,19 +51,20 @@ class WhisperService {
   /// Gets the completed transcription result
   Future<String?> getCompletedTranscription(String meetingId) async {
     final prefs = await SharedPreferences.getInstance();
-    final isCompleted = prefs.getBool('transcription_completed_$meetingId') ?? false;
-    
+    final isCompleted =
+        prefs.getBool('transcription_completed_$meetingId') ?? false;
+
     if (isCompleted) {
       return prefs.getString('transcription_$meetingId');
     }
-    
+
     return null;
   }
 
   /// Splits audio file into smaller chunks and transcribes each chunk
   Future<String> processTranscription({
     required String audioPath,
-    String? meetingId,
+    required String meetingId,
     int maxFileSizeMB = 20,
     Function(double)? onProgressUpdate,
     bool saveProgress = false,
@@ -71,21 +72,20 @@ class WhisperService {
     try {
       print('Starting transcription process...');
       final File audioFile = File(audioPath);
-      
+
       // Check if file exists
       if (!audioFile.existsSync()) {
         throw Exception('Audio file not found at path: $audioPath');
       }
-      
+
       // Get file size
       final int fileSizeBytes = await audioFile.length();
       final int maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
-      
+
       // If file is small enough, transcribe directly
       if (fileSizeBytes <= maxFileSizeBytes) {
-        final transcription = await transcribeAudio(audioPath);
-        print('Transcription completed directly');
-        print(transcription);
+        final transcriptionObj = await transcribeAudio(audioPath);
+        
         // Update progress to 100%
         if (saveProgress && meetingId != null) {
           final prefs = await SharedPreferences.getInstance();
@@ -93,60 +93,74 @@ class WhisperService {
           await prefs.setBool('transcription_completed_$meetingId', true);
           await prefs.setBool('transcription_in_progress_$meetingId', false);
         }
-        
+
+        final transcription = jsonDecode(transcriptionObj)['text'];
+        print('Transcription: $transcription');
+        await DatabaseService.insertTranscription(meetingId, transcription);
+        print('Transcription completed directly');
         return transcription;
       }
-      
+
       // Otherwise, split into chunks
-      print('File is too large (${fileSizeBytes / 1024 / 1024} MB), splitting into chunks...');
-      
+      print(
+        'File is too large (${fileSizeBytes / 1024 / 1024} MB), splitting into chunks...',
+      );
+
       // Create temp directory for chunks
       final outputDir = await getTemporaryDirectory();
-      
+
       // Determine number of chunks
       final int numChunks = (fileSizeBytes / maxFileSizeBytes).ceil();
       print('Splitting into $numChunks chunks...');
-      
+
       // Get audio duration
       final player = AudioPlayer();
       await player.setFilePath(audioPath);
       final duration = player.duration;
-      
+
       if (duration == null) {
         await player.dispose();
         throw Exception('Could not determine audio duration');
       }
-      
+
       final int chunkDurationMs = duration.inMilliseconds ~/ numChunks;
       final List<File> chunkFiles = [];
-      
+
       // Create audio chunks
       for (int i = 0; i < numChunks; i++) {
         final int startMs = i * chunkDurationMs;
-        final int endMs = min((i + 1) * chunkDurationMs, duration.inMilliseconds);
-        
+        final int endMs = min(
+          (i + 1) * chunkDurationMs,
+          duration.inMilliseconds,
+        );
+
         // Create a new file for this chunk
-        final chunkPath = '${outputDir.path}/chunk_${i.toString().padLeft(3, '0')}.mp3';
+        final chunkPath =
+            '${outputDir.path}/chunk_${i.toString().padLeft(3, '0')}.mp3';
         final chunkFile = File(chunkPath);
         print('Chunk file path: $chunkPath');
-        
+
         // Read the bytes from the original file for this segment
         final RandomAccessFile raf = await audioFile.open(mode: FileMode.read);
-        await raf.setPosition((startMs / duration.inMilliseconds * fileSizeBytes).round());
-        final bytesToRead = ((endMs - startMs) / duration.inMilliseconds * fileSizeBytes).round();
+        await raf.setPosition(
+          (startMs / duration.inMilliseconds * fileSizeBytes).round(),
+        );
+        final bytesToRead =
+            ((endMs - startMs) / duration.inMilliseconds * fileSizeBytes)
+                .round();
         final bytes = await raf.read(bytesToRead);
         await raf.close();
-        
+
         // Write the bytes to the chunk file
         await chunkFile.writeAsBytes(bytes);
         chunkFiles.add(chunkFile);
       }
-      
+
       await player.dispose();
-      
+
       // Transcribe each chunk
       final allTranscriptions = [];
-      
+
       for (int i = 0; i < chunkFiles.length; i++) {
         final chunk = chunkFiles[i];
         try {
@@ -154,18 +168,16 @@ class WhisperService {
           print('Chunk ${chunk.path} transcription completed');
           final transcriptionJson = jsonDecode(transcription);
           allTranscriptions.add(transcriptionJson);
-          
+
           // Update progress
           final progress = (i + 1) / chunkFiles.length;
           _updateProgress(progress, onProgressUpdate, saveProgress, meetingId);
-          
         } catch (e) {
           print('Error transcribing chunk ${chunk.path}: $e');
           final prefs = await SharedPreferences.getInstance();
           await prefs.setBool('transcription_completed_$meetingId', false);
           await prefs.setBool('transcription_in_progress_$meetingId', false);
           await prefs.setBool('transcription_error_$meetingId', true);
-
         } finally {
           // Clean up chunk after processing
           if (await chunk.exists()) {
@@ -173,37 +185,45 @@ class WhisperService {
           }
         }
       }
-      
+
       // Combine all transcriptions
       final combinedResult = _combineTranscriptions(allTranscriptions);
       print('Transcription completed successfully');
-      
+
       // Mark as complete if saving progress
       if (saveProgress && meetingId != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('transcription_in_progress_$meetingId', false);
         await prefs.setBool('transcription_completed_$meetingId', true);
       }
+
+      //return jsonEncode(combinedResult);
+      //final transcriptionJson = jsonDecode(transcriptionObj!);
+      String transcript = combinedResult['text'];
+      await DatabaseService.insertTranscription(meetingId, transcript);
       
-      return jsonEncode(combinedResult);
+      return transcript;
     } catch (e) {
       print('Error during transcription: $e');
-      
+
       // Mark as failed if saving progress
       if (saveProgress && meetingId != null) {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('transcription_in_progress_$meetingId', false);
         await prefs.setBool('transcription_error_$meetingId', true);
-        await prefs.setString('transcription_error_message_$meetingId', e.toString());
+        await prefs.setString(
+          'transcription_error_message_$meetingId',
+          e.toString(),
+        );
       }
-      
+
       rethrow;
     }
   }
-  
+
   // Helper to update progress in multiple ways
   Future<void> _updateProgress(
-    double progress, 
+    double progress,
     Function(double)? progressCallback,
     bool saveProgress,
     String? meetingId,
@@ -212,44 +232,49 @@ class WhisperService {
     if (progressCallback != null) {
       progressCallback(progress);
     }
-    
+
     // Save to persistent storage if requested
     if (saveProgress && meetingId != null) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setDouble('transcription_progress_$meetingId', progress);
     }
   }
-  
+
   /// Combines multiple transcription results into one
   Map<String, dynamic> _combineTranscriptions(List<dynamic> transcriptions) {
     if (transcriptions.isEmpty) return {};
-    
+
     final result = Map<String, dynamic>.from(transcriptions.first);
-    final allSegments = List<Map<String, dynamic>>.from(result['segments'] ?? []);
-    
+    final allSegments = List<Map<String, dynamic>>.from(
+      result['segments'] ?? [],
+    );
+
     double lastEndTime = 0;
-    
+
     // Start from second transcription
     for (int i = 1; i < transcriptions.length; i++) {
       final currentTranscription = transcriptions[i];
-      final currentSegments = List<Map<String, dynamic>>.from(currentTranscription['segments'] ?? []);
-      
+      final currentSegments = List<Map<String, dynamic>>.from(
+        currentTranscription['segments'] ?? [],
+      );
+
       // Adjust timestamps for current segments
       for (final segment in currentSegments) {
         segment['start'] = (segment['start'] as double) + lastEndTime;
         segment['end'] = (segment['end'] as double) + lastEndTime;
         allSegments.add(segment);
       }
-      
+
       // Update last end time
       if (currentSegments.isNotEmpty) {
         lastEndTime = currentSegments.last['end'];
       }
-      
+
       // Append text
-      result['text'] = (result['text'] ?? '') + ' ' + (currentTranscription['text'] ?? '');
+      result['text'] =
+          (result['text'] ?? '') + ' ' + (currentTranscription['text'] ?? '');
     }
-    
+
     result['segments'] = allSegments;
     return result;
   }

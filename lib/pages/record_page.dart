@@ -19,7 +19,7 @@ class _RecordPageContent extends StatelessWidget {
   Widget build(BuildContext context) {
     
     final viewModel = context.watch<RecordViewModel>();
-    final processService = context.watch<ProcessService>(); //todo: inject this to viewmodel
+    
 
     return Scaffold(
       appBar: AppBar(

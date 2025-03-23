@@ -5,22 +5,28 @@ import 'package:get_the_memo/models/meeting.dart';
 
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/services/openai_service.dart';
+import 'package:get_the_memo/services/process_service.dart';
 import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DetailsViewModel extends ChangeNotifier {
+
+  
+
   Meeting? meeting;
   String? _meetingId;
   String? transcript;
   String? summary;
   List<String> tasks = [];
-  TranscriptionStatus transcriptionStatus = TranscriptionStatus.notStarted;
-  SummaryStatus summaryStatus = SummaryStatus.notStarted;
-  TasksStatus tasksStatus = TasksStatus.notStarted;
+  StepStatus transcriptionStatus = StepStatus.none;
+  StepStatus summaryStatus = StepStatus.none;
+  StepStatus tasksStatus = StepStatus.none;
+
+  final ProcessService processService;
 
   // Constructor that accepts meetingId
-  DetailsViewModel({String? meetingId}) {
+  DetailsViewModel({required this.processService, String? meetingId}) {
     if (meetingId != null) {
       loadMeeting(meetingId);
     }
@@ -31,58 +37,42 @@ class DetailsViewModel extends ChangeNotifier {
     _meetingId = meetingId;
 
     try {
-      transcriptionStatus = await getTranscriptionStatus(meetingId);
-      summaryStatus = await getSummaryStatus(meetingId);
-      tasksStatus = await getTasksStatus(meetingId);
+      transcriptionStatus = await getStepStatus(meetingId, ProcessType.transcription);
+      summaryStatus = await getStepStatus(meetingId, ProcessType.summarize);
+      tasksStatus = await getStepStatus(meetingId, ProcessType.actionPoints);
       meeting = await DatabaseService.getMeeting(meetingId);
+      
+      await DatabaseService.debugListAllTranscriptions();
+      
       transcript = await DatabaseService.getTranscription(meetingId);
+      print('Loaded transcript: $transcript');
+      
       summary = await DatabaseService.getSummary(meetingId);
       var tasksJson = await DatabaseService.getTasks(meetingId);
       tasks = List<String>.from(jsonDecode(tasksJson ?? '[]'));
-      print('Tasks: $tasks');
-    } catch (e) {
-      print('Failed to load meeting details, $e');
+    } catch (e, stackTrace) {
+      print('Failed to load meeting details: $e\nStack trace:\n$stackTrace');
     }
 
     notifyListeners();
   }
 
   Future<void> createTranscript(String meetingId) async {
-    transcriptionStatus = TranscriptionStatus.inProgress;
+    
     String audioPath = meeting?.audioUrl ?? '';
-    notifyListeners();
-    var transcriptionObj = await WhisperService().processTranscription(
-      audioPath: audioPath,
-      meetingId: meetingId,
-      saveProgress: true,
-    );
-    final transcriptionJson = jsonDecode(transcriptionObj!);
 
-    transcript = transcriptionJson['text'];
-    transcriptionStatus = await getTranscriptionStatus(meetingId);
-    print('Transcript created: $transcript');
-    await DatabaseService.insertTranscription(meetingId, transcript!);
-
+    await processService.process_Meeting(meeting!, [ProcessType.transcription]);
+    
     notifyListeners();
   }
 
   Future<void> createSummary(String meetingId) async {
-    summaryStatus = SummaryStatus.inProgress;
-    notifyListeners();
-    final service = OpenAIService();
-    summary = await service.summarize(transcript!, meetingId);
-
-    summaryStatus = await getSummaryStatus(meetingId);
+    await processService.process_Meeting(meeting!, [ProcessType.summarize]);
     notifyListeners();
   }
 
   Future<void> createTasks(String meetingId) async {
-    tasksStatus = TasksStatus.inProgress;
-    notifyListeners();
-    final service = OpenAIService();
-    var tasksJson = await service.actionPoints(transcript!, meetingId);
-    tasks = List<String>.from(jsonDecode(tasksJson));
-    tasksStatus = await getTasksStatus(meetingId);
+    await processService.process_Meeting(meeting!, [ProcessType.actionPoints]);
     notifyListeners();
   }
 
@@ -149,61 +139,36 @@ class DetailsViewModel extends ChangeNotifier {
     }
   }
 
-  Future<TranscriptionStatus> getTranscriptionStatus(String meetingId) async {
-    TranscriptionStatus status = TranscriptionStatus.notStarted;
+  Future<StepStatus> getStepStatus(String meetingId, ProcessType type) async {
+    StepStatus status = StepStatus.none;
 
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('transcription_in_progress_$meetingId') ?? false) {
-      status = TranscriptionStatus.inProgress;
-    } else if (prefs.getBool('transcription_completed_$meetingId') ?? false) {
-      status = TranscriptionStatus.completed;
-    } else if (prefs.getBool('transcription_error_$meetingId') ?? false) {
-      status = TranscriptionStatus.failed;
+    if (processService.exists(meetingId)) {
+      final process = processService.getProcess(meetingId, [type]);
+      if (process != null) {
+        final step = process.steps.firstWhere((element) => element.type == type);
+        status = step.status;
+      }
     }
 
     return status;
   }
 
-  Future<SummaryStatus> getSummaryStatus(String meetingId) async {
-    SummaryStatus status = SummaryStatus.notStarted;
-
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('summary_in_progress_$meetingId') ?? false) {
-      status = SummaryStatus.inProgress;
-    } else if (prefs.getBool('summary_completed_$meetingId') ?? false) {
-      status = SummaryStatus.completed;
-    } else if (prefs.getBool('summary_error_$meetingId') ?? false) {
-      status = SummaryStatus.failed;
-    }
-
-    return status;
-  }
-
-  Future<TasksStatus> getTasksStatus(String meetingId) async {
-    TasksStatus status = TasksStatus.notStarted;
-
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool('tasks_in_progress_$meetingId') ?? false) {
-      status = TasksStatus.inProgress;
-    } else if (prefs.getBool('tasks_completed_$meetingId') ?? false) {
-      status = TasksStatus.completed;
-    } else if (prefs.getBool('tasks_error_$meetingId') ?? false) {
-      status = TasksStatus.failed;
-    }
-
-    return status;
-  }
+  
 
   Widget getTranscriptionSection(BuildContext context) {
-    switch (transcriptionStatus) {
-      case TranscriptionStatus.notStarted:
+    var _transcriptionStatus = transcriptionStatus;
+    if (transcript != null && transcript!.isNotEmpty) {
+      _transcriptionStatus = StepStatus.completed;
+    }
+    switch (_transcriptionStatus) {
+      case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
             createTranscript(meeting!.id);
           },
           child: const Text('Create Transcript'),
         );
-      case TranscriptionStatus.inProgress:
+      case StepStatus.inProgress:
         return ElevatedButton(
           onPressed: null,
           child: Row(
@@ -224,7 +189,7 @@ class DetailsViewModel extends ChangeNotifier {
             ],
           ),
         );
-      case TranscriptionStatus.completed:
+      case StepStatus.completed:
         return Card(
           margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -245,7 +210,7 @@ class DetailsViewModel extends ChangeNotifier {
             ],
           ),
         );
-      case TranscriptionStatus.failed:
+      case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
             createTranscript(meeting!.id);
@@ -259,16 +224,21 @@ class DetailsViewModel extends ChangeNotifier {
     if (transcript == null || transcript!.isEmpty) {
       return const SizedBox.shrink();
     }
+    var _summaryStatus = summaryStatus;
+    if (summary != null && summary!.isNotEmpty) {
+      _summaryStatus = StepStatus.completed;
+    }
 
-    switch (summaryStatus) {
-      case SummaryStatus.notStarted:
+
+    switch (_summaryStatus) {
+      case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
             createSummary(meeting!.id);
           },
           child: const Text('Create Summary'),
         );
-      case SummaryStatus.inProgress:
+      case StepStatus.inProgress:
         return ElevatedButton(
           onPressed: null,
           child: Row(
@@ -289,7 +259,7 @@ class DetailsViewModel extends ChangeNotifier {
             ],
           ),
         );
-      case SummaryStatus.completed:
+      case StepStatus.completed:
         return Card(
           margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -310,7 +280,7 @@ class DetailsViewModel extends ChangeNotifier {
             ],
           ),
         );
-      case SummaryStatus.failed:
+      case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
             createSummary(meeting!.id);
@@ -324,16 +294,20 @@ class DetailsViewModel extends ChangeNotifier {
     if (transcript == null || transcript!.isEmpty) {
       return const SizedBox.shrink();
     }
+    var _tasksStatus = tasksStatus;
+    if (!tasks.isEmpty) {
+      _tasksStatus = StepStatus.completed;
+    }
 
-    switch (tasksStatus) {
-      case TasksStatus.notStarted:
+    switch (_tasksStatus) {
+      case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
             createTasks(meeting!.id);
           },
           child: const Text('Create Action Points'),
         );
-      case TasksStatus.inProgress:
+      case StepStatus.inProgress:
         return ElevatedButton(
           onPressed: null,
           child: Row(
@@ -354,7 +328,7 @@ class DetailsViewModel extends ChangeNotifier {
             ],
           ),
         );
-      case TasksStatus.completed:
+      case StepStatus.completed:
         return Card(
           margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -389,7 +363,7 @@ class DetailsViewModel extends ChangeNotifier {
             ],
           ),
         );
-      case TasksStatus.failed:
+      case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
             createTasks(meeting!.id);
@@ -526,8 +500,8 @@ ${transcript ?? "No transcript available"}
   }
 }
 
-enum TranscriptionStatus { notStarted, inProgress, completed, failed }
+//enum TranscriptionStatus { notStarted, inProgress, completed, failed }
 
-enum SummaryStatus { notStarted, inProgress, completed, failed }
+//enum SummaryStatus { notStarted, inProgress, completed, failed }
 
-enum TasksStatus { notStarted, inProgress, completed, failed }
+//enum TasksStatus { notStarted, inProgress, completed, failed }

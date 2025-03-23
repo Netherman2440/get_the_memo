@@ -14,44 +14,44 @@ class ProcessService extends ChangeNotifier {
     List<ProcessType> request,
   ) async {
     try {
-      Process process;
+      Process? process = getProcess(meeting.id, request);
       //check if there is a process for this meeting
-      if (processes.any((element) => element.meetingId == meeting.id)) {
-        //check if there is a process for this meeting
-        process = processes.firstWhere(
-          (element) => element.meetingId == meeting.id,
-        );
-
-        if (process.steps.any((element) => request.contains(element.type))) {
-          throw Exception(
-            'Process already contains steps that are in the request',
-          );
+      if (process != null) {
+        //check if the process contains all the steps in the request
+        for (var type in request) {
+          if (process.steps.any(
+            (element) =>
+                element.type == type && element.status == StepStatus.inProgress,
+          )) {
+            throw Exception(
+              'Process already contains steps that are in the request',
+            );
+          }
         }
-      } else {
-        process = Process(meetingId: meeting.id, steps: []);
-        processes.add(process);
       }
 
-
+      process = Process(meetingId: meeting.id, steps: []);
+      processes.add(process);
+      
       for (var type in request) {
         process.steps.add(Step(type: type));
       }
-
 
       //get transcript
       String? transcript;
       if (request.contains(ProcessType.transcription)) {
         Step step = process.steps[request.indexOf(ProcessType.transcription)];
-        step.status = ProcessStatus.processing;
+        step.status = StepStatus.inProgress;
         try {
           transcript = await whisper_service.processTranscription(
             audioPath: meeting.audioUrl!,
+            meetingId: meeting.id,
           );
 
-          step.status = ProcessStatus.completed;
+          step.status = StepStatus.completed;
           step.result = transcript;
         } catch (e) {
-          step.status = ProcessStatus.failed;
+          step.status = StepStatus.failed;
           step.error = e.toString();
         }
       } else {
@@ -75,67 +75,69 @@ class ProcessService extends ChangeNotifier {
       }
       //TODO: add more steps here
 
-
       final results = await Future.wait(steps);
-    } catch (e) {
-      throw Exception('Error processing meeting: $e');
+
+      //update process
+      notifyListeners();
+      //processes.remove(process);  //TODO: there is a better way to do this
+    } catch (e, stackTrace) {
+      throw Exception('Error processing meeting: $e, $stackTrace');
     }
   }
 
   Future<void> summarize(String transcript, String meetingId) async {
-    Process process = processes.firstWhere(
-      (element) => element.meetingId == meetingId,
-    );
+    Process process = getProcess(meetingId, [ProcessType.summarize])!;
     int index = process.steps.indexWhere(
       (element) => element.type == ProcessType.summarize,
     );
+
     Step step = process.steps[index];
-    step.status = ProcessStatus.processing;
+    step.status = StepStatus.inProgress;
     try {
       step.result = await openai_service.summarize(transcript, meetingId);
-      step.status = ProcessStatus.completed;
+      step.status = StepStatus.completed;
     } catch (e) {
-      step.status = ProcessStatus.failed;
+      step.status = StepStatus.failed;
       step.error = e.toString();
     }
   }
 
   Future<void> actionPoints(String transcript, String meetingId) async {
-    Process process = getProcess(meetingId, [ProcessType.actionPoints]);
+    Process process = getProcess(meetingId, [ProcessType.actionPoints])!;
     int index = process.steps.indexWhere(
       (element) => element.type == ProcessType.actionPoints,
     );
     Step step = process.steps[index];
-    step.status = ProcessStatus.processing;
+    step.status = StepStatus.inProgress;
     try {
       step.result = await openai_service.actionPoints(transcript, meetingId);
-      step.status = ProcessStatus.completed;
+      step.status = StepStatus.completed;
     } catch (e) {
-      step.status = ProcessStatus.failed;
+      step.status = StepStatus.failed;
       step.error = e.toString();
     }
   }
 
-  Process getProcess(String meetingId, List<ProcessType> request) {
-    Process process;
+  bool exists(String meetingId) {
+    return processes.any((element) => element.meetingId == meetingId);
+  }
 
-    if (processes.any((element) => element.meetingId == meetingId)) {
-      //check if there is a process for this meeting
-      process = processes.firstWhere(
-        (element) => element.meetingId == meetingId,
+  Process? getProcess(String meetingId, List<ProcessType> request) {
+    try {
+      return processes.firstWhere(
+        (element) =>
+            element.meetingId == meetingId &&
+            element.steps.any((step) => request.contains(step.type)),
       );
-
-      if (process.steps.any((element) => request.contains(element.type))) {
-        throw Exception(
-          'Process already contains steps that are in the request',
-        );
-      }
-    } else {
-      process = Process(meetingId: meetingId, steps: []);
-      processes.add(process);
+    } catch (e) {
+      return null;
     }
+  }
 
-    return process;
+  List<Process> getProcesses(String meetingId) {
+    return processes
+        .where((element) => element.meetingId == meetingId)
+        .toList();
   }
 }
 
@@ -149,10 +151,10 @@ class Step extends ChangeNotifier {
   ProcessType type;
   String? result;
   String? error;
-  ProcessStatus _status = ProcessStatus.none;
+  StepStatus _status = StepStatus.none;
 
-  ProcessStatus get status => _status;
-  set status(ProcessStatus value) {
+  StepStatus get status => _status;
+  set status(StepStatus value) {
     if (_status != value) {
       _status = value;
       notifyListeners();
@@ -162,6 +164,13 @@ class Step extends ChangeNotifier {
   Step({required this.type, this.result, this.error});
 }
 
-enum ProcessType { none, transcription, summarize, actionPoints, autoTitle, send }
+enum ProcessType {
+  none,
+  transcription,
+  summarize,
+  actionPoints,
+  autoTitle,
+  send,
+}
 
-enum ProcessStatus { none, processing, completed, failed }
+enum StepStatus { none, inProgress, completed, failed }

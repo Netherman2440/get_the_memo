@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_the_memo/services/process_service.dart';
 import 'package:get_the_memo/view_models/details_view_model.dart';
 import 'package:provider/provider.dart';
 
@@ -10,7 +11,7 @@ class DetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => DetailsViewModel(meetingId: meetingId),
+      create: (context) => DetailsViewModel(processService: context.read<ProcessService>(), meetingId: meetingId),
       child: DetailsPageContent(),
     );
   }

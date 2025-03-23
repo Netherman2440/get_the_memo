@@ -176,22 +176,38 @@ class DatabaseService {
     String meetingId,
     String transcription,
   ) async {
+    print('Inserting transcription for meetingId: $meetingId'); // Debug log
+    print('Transcription text: $transcription'); // Debug log
+    
     final transcriptionId =
         'trans_${DateTime.now().millisecondsSinceEpoch}_$meetingId';
-    await db?.insert(tableTranscriptions, {
+    
+    final data = {
       columnTranscriptionId: transcriptionId,
       columnMeetingId: meetingId,
       columnTranscriptionText: transcription,
       columnTranscriptionCreatedAt: DateTime.now().toIso8601String(),
-    }, conflictAlgorithm: ConflictAlgorithm.replace);
+    };
+    
+    print('Inserting data: $data'); // Debug log
+    
+    try {
+      await db?.insert(tableTranscriptions, data,
+          conflictAlgorithm: ConflictAlgorithm.replace);
+      print('Transcription inserted successfully'); // Debug log
+    } catch (e) {
+      print('Error inserting transcription: $e'); // Debug log
+      rethrow;
+    }
   }
 
   // Get transcription for a meeting
   static Future<String?> getTranscription(String meetingId) async {
+    print('Fetching transcription for meetingId: $meetingId'); // Debug log
+    
     final List<Map<String, dynamic>> maps =
         await db?.query(
           tableTranscriptions,
-          columns: [columnTranscriptionText],
           where: '$columnMeetingId = ?',
           whereArgs: [meetingId],
           orderBy: '$columnTranscriptionCreatedAt DESC',
@@ -199,6 +215,8 @@ class DatabaseService {
         ) ??
         [];
 
+    print('Found transcriptions: $maps'); // Debug log
+    
     if (maps.isEmpty) return null;
     return maps.first[columnTranscriptionText];
   }
@@ -235,6 +253,18 @@ class DatabaseService {
       where: '$columnMeetingId = ?',
       whereArgs: [meetingId],
     );
+  }
+
+  // Add debug method to list all transcriptions
+  static Future<void> debugListAllTranscriptions() async {
+    print('\n--- DEBUG: All Transcriptions ---');
+    final List<Map<String, dynamic>> allTranscriptions =
+        await db?.query(tableTranscriptions) ?? [];
+    print('Total transcriptions found: ${allTranscriptions.length}');
+    for (var trans in allTranscriptions) {
+      print('Transcription: $trans');
+    }
+    print('-------------------------------\n');
   }
   //endregion
 

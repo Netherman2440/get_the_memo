@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:get_the_memo/pages/details_page.dart';
+import 'package:get_the_memo/services/process_service.dart';
 import 'package:provider/provider.dart';
-import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/view_models/history_view_model.dart';
 
 class HistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => HistoryViewModel()..loadMeetings(),
+      create: (_) => HistoryViewModel(processService: context.read<ProcessService>()),
       child: Scaffold(
         appBar: AppBar(title: Text('History')),
         body: Consumer<HistoryViewModel>(
@@ -80,45 +79,10 @@ class HistoryItem extends StatelessWidget {
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: ListTile(
+      child: 
+      ListTile(
         leading: Icon(Icons.mic, color: Theme.of(context).colorScheme.primary),
-        trailing: IconButton(
-          icon: Icon(Icons.delete),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: Text('Delete Meeting'),
-                    content: Text(
-                      'Are you sure you want to delete this meeting?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          viewModel.deleteMeeting(meetingId);
-                          Navigator.of(context).pop();
-                        },
-                        style: TextButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                        child: Text('Delete',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onError,
-                        ),
-                        ),
-                      ),
-                    ],
-                  ),
-            );
-          },
-        ),
+        trailing: viewModel.getHistoryIcon(context, meetingId),
         contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         title: Text(
           title,
@@ -169,3 +133,4 @@ class HistoryItem extends StatelessWidget {
     return '${twoDigits(minutes)}:${twoDigits(remainingSeconds)}';
   }
 }
+

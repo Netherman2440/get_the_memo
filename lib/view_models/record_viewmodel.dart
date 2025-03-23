@@ -12,7 +12,7 @@ class RecordViewModel extends ChangeNotifier {
   final ProcessService processService;//todo: use it
   
   RecordViewModel({required this.processService}) {
-    DatabaseService.init();
+    
   }
 
   // Toggle recording state and handle audio operations

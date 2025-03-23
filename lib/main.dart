@@ -17,24 +17,24 @@ void main() async {
   // Załaduj zmienne środowiskowe
   await dotenv.load();
   
-  // Initialize background service
-  await BackgroundService.initializeService();
+  final processService = ProcessService();
   
   // Inicjalizacja powiadomień
-  await NotificationService.initialize();
-  await NotificationService.requestPermissions();
+  //await NotificationService.initialize();
+  //await NotificationService.requestPermissions();
   
   await DatabaseService.init();
-  runApp(MyApp());
+  runApp(MyApp(processService: processService));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final ProcessService processService;
+  const MyApp({super.key, required this.processService});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => ProcessService(),
+    return ChangeNotifierProvider<ProcessService>(
+      create: (_) => processService,
       child: MaterialApp(
         title: 'Get the Memo',
         theme: ThemeData(
@@ -46,8 +46,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
 
 class HomePage extends StatefulWidget {
   static const List<BottomNavigationBarItem> items = [

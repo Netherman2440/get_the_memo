@@ -71,9 +71,20 @@ class OpenAIService {
     }
   }
 
+  List<String> formatActionPoints(String text) {
+    // Split by newline and process each line
+    return text
+        .split('\n')
+        .map((line) => line.trim())
+        // Remove empty lines
+        .where((line) => line.isNotEmpty)
+        // Remove leading dash and whitespace
+        .map((line) => line.replaceFirst(RegExp(r'^[-•*]\s*'), ''))
+        .toList();
+  }
+
   Future<String> actionPoints(String text, String meetingId) async {
     try {
-
       final messages = [
         OpenAIChatCompletionChoiceMessageModel(
           role: OpenAIChatMessageRole.system,
@@ -93,14 +104,15 @@ class OpenAIService {
       final completion = await chat(messages);
       final completionText = completion.content!.first.text!;
       print('Completion Text: $completionText');
-      // Parse the completion text into an array of action points
 
-      await DatabaseService.insertTasks(meetingId, completionText);
+      final formattedTasks = formatActionPoints(completionText);
+      var tasksJson = jsonEncode(formattedTasks);
+      await DatabaseService.insertTasks(meetingId, tasksJson);
       final prefs = await SharedPreferences.getInstance();
       prefs.setBool('tasks_in_progress_$meetingId', false);
       prefs.setBool('tasks_completed_$meetingId', true);
 
-      return completionText;
+      return tasksJson;
     } catch (e) {
       print(e);
       await DatabaseService.updateTasks(meetingId, 'Error: $e');

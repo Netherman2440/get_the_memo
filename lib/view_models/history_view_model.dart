@@ -10,6 +10,8 @@ import 'package:just_audio/just_audio.dart';
 
 class HistoryViewModel extends ChangeNotifier {
   HistoryViewModel({required this.processService}) {
+    // Add listener to process service
+    processService.addListener(_onProcessServiceChanged);
     loadMeetings();
   }
 
@@ -96,6 +98,8 @@ class HistoryViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    // Remove listener when disposing
+    processService.removeListener(_onProcessServiceChanged);
     _audioPlayer.dispose();
     _transcriptionCheckTimer?.cancel();
     super.dispose();
@@ -175,9 +179,14 @@ class HistoryViewModel extends ChangeNotifier {
     if (processes.isEmpty) {
       return false;
     }
-
+    print(processes);
     return processes.any((process) =>
     
      process.steps.any((step) => step.status == StepStatus.inProgress));
+  }
+
+  // Add method to handle process service changes
+  void _onProcessServiceChanged() {
+    notifyListeners();
   }
 }

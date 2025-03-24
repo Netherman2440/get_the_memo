@@ -30,6 +30,7 @@ class DetailsViewModel extends ChangeNotifier {
     if (meetingId != null) {
       loadMeeting(meetingId);
     }
+    processService.addListener(_onProcessServiceChanged);
   }
 
   // Load meeting data
@@ -72,6 +73,7 @@ class DetailsViewModel extends ChangeNotifier {
   }
 
   Future<void> createTasks(String meetingId) async {
+    
     await processService.process_Meeting(meeting!, [ProcessType.actionPoints]);
     notifyListeners();
   }
@@ -497,6 +499,10 @@ ${transcript ?? "No transcript available"}
               '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
         )
         .join('&');
+  }
+
+  void _onProcessServiceChanged() {
+    loadMeeting(meeting!.id);
   }
 }
 

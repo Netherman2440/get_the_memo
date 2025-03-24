@@ -5,6 +5,12 @@ import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:flutter/foundation.dart';
 
 class ProcessService extends ChangeNotifier {
+  static ProcessService? _instance;
+  
+  ProcessService() {
+    _instance = this;
+  }
+
   final openai_service = OpenAIService();
   final whisper_service = WhisperService();
   List<Process> processes = [];
@@ -141,13 +147,13 @@ class ProcessService extends ChangeNotifier {
   }
 }
 
-class Process extends ChangeNotifier {
+class Process {
   String meetingId;
   List<Step> steps;
   Process({required this.meetingId, required this.steps});
 }
 
-class Step extends ChangeNotifier {
+class Step {
   ProcessType type;
   String? result;
   String? error;
@@ -157,7 +163,7 @@ class Step extends ChangeNotifier {
   set status(StepStatus value) {
     if (_status != value) {
       _status = value;
-      notifyListeners();
+      ProcessService._instance?.notifyListeners();
     }
   }
 

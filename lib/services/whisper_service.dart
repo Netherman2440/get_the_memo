@@ -1,3 +1,4 @@
+import 'package:get_the_memo/services/api_key_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
@@ -9,7 +10,12 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WhisperService {
-  final apiKey = dotenv.get('OPENAI_API_KEY');
+  final ApiKeyService _apiKeyService = ApiKeyService();
+  String apiKey = '';
+
+  Future<void> init() async {
+    apiKey = await _apiKeyService.getApiKey();
+  }
 
   Future<String> transcribeAudio(String audioPath) async {
     var request = http.MultipartRequest(
@@ -32,7 +38,7 @@ class WhisperService {
       var responseBody = await response.stream.bytesToString();
       return responseBody;
     } else {
-      throw Exception('Failed to transcribe audio');
+      throw Exception('Failed to transcribe audio: ${response.statusCode} ${response.reasonPhrase}');
     }
   }
 
@@ -85,14 +91,7 @@ class WhisperService {
       // If file is small enough, transcribe directly
       if (fileSizeBytes <= maxFileSizeBytes) {
         final transcriptionObj = await transcribeAudio(audioPath);
-        
-        // Update progress to 100%
-        if (saveProgress && meetingId != null) {
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setDouble('transcription_progress_$meetingId', 1.0);
-          await prefs.setBool('transcription_completed_$meetingId', true);
-          await prefs.setBool('transcription_in_progress_$meetingId', false);
-        }
+      
 
         final transcription = jsonDecode(transcriptionObj)['text'];
         print('Transcription: $transcription');
@@ -174,10 +173,6 @@ class WhisperService {
           _updateProgress(progress, onProgressUpdate, saveProgress, meetingId);
         } catch (e) {
           print('Error transcribing chunk ${chunk.path}: $e');
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setBool('transcription_completed_$meetingId', false);
-          await prefs.setBool('transcription_in_progress_$meetingId', false);
-          await prefs.setBool('transcription_error_$meetingId', true);
         } finally {
           // Clean up chunk after processing
           if (await chunk.exists()) {
@@ -190,13 +185,6 @@ class WhisperService {
       final combinedResult = _combineTranscriptions(allTranscriptions);
       print('Transcription completed successfully');
 
-      // Mark as complete if saving progress
-      if (saveProgress && meetingId != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('transcription_in_progress_$meetingId', false);
-        await prefs.setBool('transcription_completed_$meetingId', true);
-      }
-
       //return jsonEncode(combinedResult);
       //final transcriptionJson = jsonDecode(transcriptionObj!);
       String transcript = combinedResult['text'];
@@ -205,17 +193,6 @@ class WhisperService {
       return transcript;
     } catch (e) {
       print('Error during transcription: $e');
-
-      // Mark as failed if saving progress
-      if (saveProgress && meetingId != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('transcription_in_progress_$meetingId', false);
-        await prefs.setBool('transcription_error_$meetingId', true);
-        await prefs.setString(
-          'transcription_error_message_$meetingId',
-          e.toString(),
-        );
-      }
 
       rethrow;
     }

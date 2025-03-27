@@ -19,7 +19,7 @@ void main() async {
   await dotenv.load();
   
   final processService = ProcessService();
-  
+
   // Inicjalizacja powiadomień
   //await NotificationService.initialize();
   //await NotificationService.requestPermissions();

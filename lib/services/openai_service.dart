@@ -1,16 +1,21 @@
 import 'dart:convert';
 
 import 'package:dart_openai/dart_openai.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_the_memo/prompts/summarize.dart';
 import 'package:get_the_memo/prompts/action_points.dart';
+import 'package:get_the_memo/services/api_key_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class OpenAIService {
   final String model = "o3-mini";
   OpenAIService() {
-    OpenAI.apiKey = dotenv.get('OPENAI_API_KEY');
+    init();
+  }
+
+  Future<void> init() async {
+    final apiKeyService = ApiKeyService();
+    OpenAI.apiKey = await apiKeyService.getApiKey();
     OpenAI.requestsTimeOut = const Duration(seconds: 3600);
   }
 
@@ -55,17 +60,10 @@ class OpenAIService {
       final completion = await chat(messages);
       final completionText = completion.content!.first.text!;
       await DatabaseService.insertSummary(meetingId, completionText);
-      final prefs = await SharedPreferences.getInstance();
-      prefs.setBool('summary_in_progress_$meetingId', false);
-      prefs.setBool('summary_completed_$meetingId', true);
       return completionText;
     } catch (e) {
       print(e);
       await DatabaseService.updateSummary(meetingId, 'Error: $e');
-      final prefs = await SharedPreferences.getInstance();
-      prefs.setBool('summary_error_$meetingId', true);
-      prefs.setBool('summary_in_progress_$meetingId', false);
-      prefs.setBool('summary_completed_$meetingId', false);
 
       return '';
     }
@@ -108,18 +106,10 @@ class OpenAIService {
       final formattedTasks = formatActionPoints(completionText);
       var tasksJson = jsonEncode(formattedTasks);
       await DatabaseService.insertTasks(meetingId, tasksJson);
-      final prefs = await SharedPreferences.getInstance();
-      prefs.setBool('tasks_in_progress_$meetingId', false);
-      prefs.setBool('tasks_completed_$meetingId', true);
-
       return tasksJson;
     } catch (e) {
       print(e);
       await DatabaseService.updateTasks(meetingId, 'Error: $e');
-      final prefs = await SharedPreferences.getInstance();
-      prefs.setBool('tasks_error_$meetingId', true);
-      prefs.setBool('tasks_in_progress_$meetingId', false);
-      prefs.setBool('tasks_completed_$meetingId', false);
       return '';
     }
   }

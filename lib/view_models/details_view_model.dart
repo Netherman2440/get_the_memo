@@ -43,7 +43,7 @@ class DetailsViewModel extends ChangeNotifier {
       tasksStatus = await getStepStatus(meetingId, ProcessType.actionPoints);
       meeting = await DatabaseService.getMeeting(meetingId);
       
-      await DatabaseService.debugListAllTranscriptions();
+      //await DatabaseService.debugListAllTranscriptions();
       
       transcript = await DatabaseService.getTranscription(meetingId);
       print('Loaded transcript: $transcript');

@@ -189,7 +189,7 @@ class DatabaseService {
       columnTranscriptionCreatedAt: DateTime.now().toIso8601String(),
     };
     
-    print('Inserting data: $data'); // Debug log
+      print('Inserting data: $data'); // Debug log
     
     try {
       await db?.insert(tableTranscriptions, data,

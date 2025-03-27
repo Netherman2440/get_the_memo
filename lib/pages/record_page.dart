@@ -22,12 +22,7 @@ class _RecordPageContent extends StatelessWidget {
     
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Record Audio'),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-      ),
+
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

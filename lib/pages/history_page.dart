@@ -9,7 +9,7 @@ class HistoryPage extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => HistoryViewModel(processService: context.read<ProcessService>()),
       child: Scaffold(
-        appBar: AppBar(title: Text('History')),
+        
         body: Consumer<HistoryViewModel>(
           builder: (context, viewModel, child) {
             if (viewModel.isLoading) {

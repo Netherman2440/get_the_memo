@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/pages/history_page.dart';
 import 'package:get_the_memo/pages/record_page.dart';
+import 'package:get_the_memo/pages/settings_page.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/services/process_service.dart';
 import 'package:provider/provider.dart';
@@ -64,6 +65,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Get the Memo'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              // Add settings page navigation logic here
+              showDialog(context: context, builder: (context) => SettingsPage());
+            },
+          ),
+        ],
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: selectedIndex,
         onDestinationSelected: (value) {

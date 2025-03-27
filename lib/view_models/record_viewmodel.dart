@@ -9,6 +9,7 @@ class RecordViewModel extends ChangeNotifier {
   RecordingState _state = RecordingState.idle;
   String? _currentFileName;
   RecordingState get state => _state;
+  Meeting? currentMeeting;
   final ProcessService processService;//todo: use it
   
   RecordViewModel({required this.processService}) {
@@ -54,7 +55,7 @@ class RecordViewModel extends ChangeNotifier {
         final duration = player.duration;
         await player.dispose();
 
-        Meeting meeting = Meeting(
+        currentMeeting = Meeting(
           id: _currentFileName!,
           title: 'New Meeting',
           description: 'Description',
@@ -62,7 +63,7 @@ class RecordViewModel extends ChangeNotifier {
           audioUrl: path,
           duration: duration?.inSeconds ?? 0,
         );
-        await DatabaseService.insertMeeting(meeting);
+        await DatabaseService.insertMeeting(currentMeeting!);
 
         final meetings = await DatabaseService.getMeetings();
         print('All meetings in database:');
@@ -130,6 +131,11 @@ class RecordViewModel extends ChangeNotifier {
         return 'Ready to Record';
     }
   }
+
+  Future<void> processMeeting(Meeting meeting, List<ProcessType> request) async {
+    await processService.process_Meeting(meeting, request);
+  }
+
 
   @override
   void dispose() {

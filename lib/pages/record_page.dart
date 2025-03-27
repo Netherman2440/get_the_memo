@@ -60,7 +60,20 @@ class _RecordPageContent extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   FilledButton.icon(
-                    onPressed: () => viewModel.saveRecording(),
+                    onPressed: () async {
+                      await viewModel.saveRecording();
+                      if (context.mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return ChangeNotifierProvider.value(
+                              value: viewModel,
+                              child: ProcessOptionsDialog(),
+                            );
+                          },
+                        );
+                      }
+                    },
                     icon: Icon(Icons.save),
                     label: Text('Save Recording'),
                     style: FilledButton.styleFrom(
@@ -89,6 +102,81 @@ class _RecordPageContent extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class ProcessOptionsDialog extends StatefulWidget {
+  @override
+  _ProcessOptionsDialogState createState() => _ProcessOptionsDialogState();
+}
+
+class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
+  // Processing options flags
+  bool transcribe = false;
+  bool summarize = false;
+  bool extractTasks = false;
+  
+  @override
+  Widget build(BuildContext context) {
+    final viewModel = context.read<RecordViewModel>();
+    return AlertDialog(
+      title: Text('Processing Options'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CheckboxListTile(
+            title: Text('Transcribe'),
+            value: transcribe,
+            onChanged: (bool? value) {
+              setState(() {
+                transcribe = value ?? false;
+              });
+            },
+          ),
+          CheckboxListTile(
+            title: Text('Summarize'),
+            value: summarize,
+            onChanged: (bool? value) {
+              setState(() {
+                summarize = value ?? false;
+              });
+            },
+          ),
+          CheckboxListTile(
+            title: Text('Extract Tasks'),
+            value: extractTasks,
+            onChanged: (bool? value) {
+              setState(() {
+                extractTasks = value ?? false;
+              });
+            },
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: () {
+            // Convert selected options to ProcessType list
+            final List<ProcessType> selectedOptions = [];
+            if (transcribe) selectedOptions.add(ProcessType.transcription);
+            if (summarize) selectedOptions.add(ProcessType.summarize);
+            if (extractTasks) selectedOptions.add(ProcessType.actionPoints);
+            
+            // Process the meeting with selected options
+            viewModel.processMeeting(
+              viewModel.currentMeeting!, 
+              selectedOptions
+            );
+            Navigator.pop(context);
+          },
+          child: Text('Process'),
+        ),
+      ],
     );
   }
 }

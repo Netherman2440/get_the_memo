@@ -9,6 +9,8 @@ class ProcessService extends ChangeNotifier {
   
   ProcessService() {
     _instance = this;
+    whisper_service.init();
+    openai_service.init();
   }
 
   final openai_service = OpenAIService();

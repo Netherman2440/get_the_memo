@@ -26,7 +26,6 @@ class HistoryViewModel extends ChangeNotifier {
   String? _currentPlayingId;
 
   final ProcessService processService;
-  final WhisperService _whisperService = WhisperService();
 
   // Timer to periodically check transcription status
   Timer? _transcriptionCheckTimer;

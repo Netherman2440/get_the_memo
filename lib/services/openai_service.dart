@@ -9,9 +9,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class OpenAIService {
   final String model = "o3-mini";
-  OpenAIService() {
-    init();
-  }
 
   Future<void> init() async {
     final apiKeyService = ApiKeyService();

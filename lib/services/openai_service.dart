@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dart_openai/dart_openai.dart';
 import 'package:get_the_memo/prompts/summarize.dart';
 import 'package:get_the_memo/prompts/action_points.dart';
+import 'package:get_the_memo/prompts/auto_title.dart';
 import 'package:get_the_memo/services/api_key_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -109,5 +110,29 @@ class OpenAIService {
       await DatabaseService.updateTasks(meetingId, 'Error: $e');
       return '';
     }
+  }
+
+  Future<String> autoTitle(String transcript, String id) async {
+    final messages = [
+      OpenAIChatCompletionChoiceMessageModel(
+        role: OpenAIChatMessageRole.system,
+        content: [
+          OpenAIChatCompletionChoiceMessageContentItemModel.text(autoTitlePrompt),
+        ],
+      ),
+      OpenAIChatCompletionChoiceMessageModel(
+        role: OpenAIChatMessageRole.user,
+        content: [
+          OpenAIChatCompletionChoiceMessageContentItemModel.text(transcript),
+        ],
+      ),
+    ];
+    final completion = await chat(messages);
+    final completionText = completion.content!.first.text!;
+    print('Completion Text: $completionText');
+    var json = jsonDecode(completionText);
+    print('JSON: $json');
+    await DatabaseService.insertAutoTitle(id, json['title'], json['description']);
+    return json['title'];
   }
 }

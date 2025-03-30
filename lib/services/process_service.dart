@@ -104,6 +104,9 @@ class ProcessService extends ChangeNotifier {
       if (request.contains(ProcessType.actionPoints)) {
         steps.add(actionPoints(transcript, meeting.id));
       }
+      if (request.contains(ProcessType.autoTitle)) {
+        steps.add(autoTitle(transcript, meeting.id));
+      }
       //TODO: add more steps here
 
       final results = await Future.wait(steps);
@@ -169,6 +172,22 @@ class ProcessService extends ChangeNotifier {
     return processes
         .where((element) => element.meetingId == meetingId)
         .toList();
+  }
+  
+  Future<void> autoTitle(String transcript, String id) async {
+    Process process = getProcess(id, [ProcessType.autoTitle])!;
+    int index = process.steps.indexWhere(
+      (element) => element.type == ProcessType.autoTitle,
+    );
+    Step step = process.steps[index];
+    step.status = StepStatus.inProgress;
+    try {
+      step.result = await openai_service.autoTitle(transcript, id);
+      step.status = StepStatus.completed;
+    } catch (e) {
+      step.status = StepStatus.failed;
+      step.error = e.toString();
+    }
   }
 }
 

@@ -111,7 +111,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
   bool transcribe = false;
   bool summarize = false;
   bool extractTasks = false;
-  
+  bool autoTitle = false;
   @override
   Widget build(BuildContext context) {
     final viewModel = context.read<RecordViewModel>();
@@ -126,6 +126,15 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
             onChanged: (bool? value) {
               setState(() {
                 transcribe = value ?? false;
+              });
+            },
+          ),
+          CheckboxListTile(
+            title: Text('Auto Title'),
+            value: autoTitle,
+            onChanged: (bool? value) {
+              setState(() {
+                autoTitle = value ?? false;
               });
             },
           ),
@@ -161,7 +170,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
             if (transcribe) selectedOptions.add(ProcessType.transcription);
             if (summarize) selectedOptions.add(ProcessType.summarize);
             if (extractTasks) selectedOptions.add(ProcessType.actionPoints);
-            
+            if (autoTitle) selectedOptions.add(ProcessType.autoTitle);
             // Process the meeting with selected options
             viewModel.processMeeting(
               viewModel.currentMeeting!, 

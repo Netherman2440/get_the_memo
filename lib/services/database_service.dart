@@ -97,6 +97,7 @@ class DatabaseService {
         FOREIGN KEY ($columnMeetingId) REFERENCES $tableMeetings ($columnId) ON DELETE CASCADE
       )
     ''');
+
   }
 
   // Handle database upgrades
@@ -112,7 +113,6 @@ class DatabaseService {
       await db.execute('DROP TABLE IF EXISTS $tableMeetings');
       await db.execute('DROP TABLE IF EXISTS $tableSummary');
       await db.execute('DROP TABLE IF EXISTS $tableTasks');
-
       // Recreate all tables
       await _createDb(db, newVersion);
 
@@ -353,4 +353,15 @@ class DatabaseService {
       whereArgs: [meetingId],
     );
   }
+
+  //region AutoTitle
+  static Future<void> insertAutoTitle(String meetingId, String title, String description) async {
+    await db?.update(tableMeetings, {
+      columnTitle: title,
+      columnDescription: description,
+    }, where: '$columnId = ?', whereArgs: [meetingId], conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  
+  
 }

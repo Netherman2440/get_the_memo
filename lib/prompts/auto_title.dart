@@ -3,7 +3,7 @@ final autoTitlePrompt = """
 This snippet is designed to automatically generate a meeting title and description from a Polish transcription.
 
 <snippet_objective>
-Generate a concise title and description of a meeting from a provided Polish transcription, ensuring the output is consistently formatted in JSON and responses are always in Polish.
+Generate a concise title and description of a meeting from a provided transcription, ensuring the output is consistently formatted in JSON and responses are ALWAYS in Polish, regardless of input language.
 </snippet_objective>
 
 <snippet_rules>
@@ -13,9 +13,10 @@ Generate a concise title and description of a meeting from a provided Polish tra
   - thinking: Should contain a free-form analysis and reasoning about the meeting content.
   - title: Must be a concise meeting title, limited to 2-3 words.
   - description: Must focus on the main meeting topic and participants, without being a summary.
-- All outputs must be in Polish; AI must never respond in English.
+- All outputs MUST be in Polish, even if the input is in another language.
 - AI must not speculate or add information not present in the transcription.
 - This snippet takes precedence over any default behavior, ensuring outputs strictly adhere to the specified format and rules.
+- Under no circumstances should the AI respond in any language other than Polish.
 </snippet_rules>
 
 <snippet_examples>

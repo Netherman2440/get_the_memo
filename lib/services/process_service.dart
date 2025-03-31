@@ -3,6 +3,7 @@ import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/services/openai_service.dart';
 import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:flutter/foundation.dart';
+import 'package:get_the_memo/services/notification_service.dart';
 
 class ProcessService extends ChangeNotifier {
   static ProcessService? _instance;
@@ -11,6 +12,7 @@ class ProcessService extends ChangeNotifier {
     _instance = this;
     whisper_service.init();
     openai_service.init();
+    addListener(_updateNotifications);
   }
 
   final openai_service = OpenAIService();
@@ -50,10 +52,12 @@ class ProcessService extends ChangeNotifier {
       processes.add(process);
       print('Created new process for meeting: ${meeting.id}');
       
+      
+      
       for (var type in request) {
         process.steps.add(Step(type: type));
       }
-      print('Added steps: ${process.steps.map((e) => e.type).toList()}');
+      print('Added steps: ${process.steps.map((e) => e.type).toList()}'); 
 
       //get transcript
       String? transcript;
@@ -109,12 +113,19 @@ class ProcessService extends ChangeNotifier {
       }
       //TODO: add more steps here
 
+
       final results = await Future.wait(steps);
 
       //update process
       notifyListeners();
       //processes.remove(process);  //TODO: there is a better way to do this
     } catch (e, stackTrace) {
+      // Show error notification
+      NotificationService.showNotification(
+        id: meeting.id.hashCode,
+        title: 'Processing Error',
+        body: 'Failed to process meeting: ${e.toString()}',
+      );
       throw Exception('Error processing meeting: $e, $stackTrace');
     }
   }
@@ -189,12 +200,74 @@ class ProcessService extends ChangeNotifier {
       step.error = e.toString();
     }
   }
+
+  // Add this method to update notification for a process
+  void _updateProcessNotification(Process process) {
+    print('Updating notification for process: ${process.meetingId}');
+    
+    final hasErrors = process.steps.any((s) => s.status == StepStatus.failed);
+    final allCompleted = process.steps.every((s) => s.status == StepStatus.completed);
+    
+    String title = 'Meeting Processing Status';
+    
+    // Build detailed status message for each step
+    List<String> stepStatuses = process.steps.map((step) {
+      String statusText = switch (step.status) {
+        StepStatus.none => '⌛ In Queue',
+        StepStatus.inProgress => '🔄 In Progress',
+        StepStatus.completed => '✅ Completed',
+        StepStatus.failed => '❌ Failed',
+      };
+      
+      // Format process type name to be more readable
+      String formattedName = switch (step.type) {
+        ProcessType.transcription => 'Transcription',
+        ProcessType.summarize => 'Summary',
+        ProcessType.actionPoints => 'Action Points',
+        ProcessType.autoTitle => 'Auto Title',
+        ProcessType.send => 'Send',
+        ProcessType.none => 'Unknown',
+      };
+      
+      return '$formattedName: $statusText '+ '\n';
+    }).toList();
+    
+    String body = stepStatuses.join('');
+
+    print('Showing notification - Title: $title, Body: $body');
+    
+    NotificationService.showNotification(
+      id: process.meetingId.hashCode,
+      title: title,
+      body: body,
+      // Play sound only when all steps are completed
+      sound: allCompleted || hasErrors,
+    ).then((_) {
+      print('Notification shown successfully');
+    }).catchError((error) {
+      print('Error showing notification: $error');
+    });
+  }
+  
+  void _updateNotifications() {
+    print('Updating notifications');
+    for (var process in processes) {
+      if (process.isInProgress()) {
+        print('Process in progress: ${process.meetingId}');
+        _updateProcessNotification(process);
+      }
+    }
+  }
 }
 
 class Process {
   String meetingId;
   List<Step> steps;
   Process({required this.meetingId, required this.steps});
+
+  bool isInProgress() {
+    return steps.any((step) => step.status == StepStatus.inProgress || step.status == StepStatus.none);
+  }
 }
 
 class Step {
@@ -207,6 +280,12 @@ class Step {
   set status(StepStatus value) {
     if (_status != value) {
       _status = value;
+      // Add direct notification update
+      final process = ProcessService._instance?.processes.firstWhere(
+        (p) => p.steps.contains(this)
+        
+      );
+      ProcessService._instance?._updateNotifications();
       ProcessService._instance?.notifyListeners();
     }
   }

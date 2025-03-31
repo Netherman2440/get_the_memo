@@ -59,37 +59,58 @@ class NotificationService {
         >();
   }
 
-  // Show a basic notification
+  // Add method to check if notifications are enabled
+  static Future<bool> areNotificationsEnabled() async {
+    final platform = _notificationsPlugin.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    if (platform != null) {
+      final result = await platform.areNotificationsEnabled();
+      print('Notifications enabled: $result');
+      return result ?? false;
+    }
+    return false;
+  }
+
+  // Modify showNotification to check permissions first
   static Future<void> showNotification({
     required String title,
     required String body,
     String? payload,
     int id = 0,
+    bool sound = false,
   }) async {
+    print('Attempting to show notification');
     await initialize();
-
+    
+    final enabled = await areNotificationsEnabled();
+    if (!enabled) {
+      print('Notifications are not enabled!');
+      await requestPermissions();
+    }
+    print('Showing notification with sound: $sound');
     // Android notification details
-    const AndroidNotificationDetails androidNotificationDetails =
+    final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-          'transcription_channel', // Channel ID
-          'Transcription Notifications', // Channel name
+          'process_channel', // Channel ID
+          'Process Notifications', // Channel name
           channelDescription:
-              'Notifications for transcription status', // Channel description
+              'Notifications for meeting processing status', // Channel description
           importance: Importance.max,
           priority: Priority.high,
           showWhen: true,
+          playSound: sound,
         );
 
     // iOS notification details
-    const DarwinNotificationDetails iosNotificationDetails =
+    final DarwinNotificationDetails iosNotificationDetails =
         DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
-          presentSound: true,
+          presentSound: sound,
         );
 
     // General notification details
-    const NotificationDetails notificationDetails = NotificationDetails(
+    final NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
       iOS: iosNotificationDetails,
     );
@@ -104,19 +125,7 @@ class NotificationService {
     );
   }
 
-  // Show a notification for completed transcription
-  static Future<void> showTranscriptionCompleteNotification({
-    required String meetingTitle,
-    String? payload,
-    int id = 1,
-  }) async {
-    await showNotification(
-      title: 'Transcription Complete',
-      body: 'The transcription for "$meetingTitle" is now ready to view.',
-      payload: payload,
-      id: id,
-    );
-  }
+  
 
   // Cancel a specific notification
   static Future<void> cancelNotification(int id) async {

@@ -2,7 +2,7 @@
 
 Get The Memo is an AI-powered mobile application that automatically generates comprehensive memos from business meetings. It helps teams capture, organize, and share important information efficiently.
 
-You can get the .apk file from [here](https://mega.nz/file/4HNHVIwR#TOlr6x84L1wgClMBOpVnyYpOwedZvdExipw_m1Swo14).
+You can get the .apk file from [here](https://github.com/Netherman2440/get_the_memo/releases).
 
 ## 🚀 Features
 

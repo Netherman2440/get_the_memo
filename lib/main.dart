@@ -7,8 +7,8 @@ import 'package:get_the_memo/services/process_service.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:get_the_memo/services/notification_service.dart';
-import 'package:get_the_memo/services/background_service.dart';
 
+//flutter build apk --release
 //flutter emulators --launch Pixel_3a_API_34_extension_level_7_x86_64
 //flutter run --verbose-system-logs=false
 

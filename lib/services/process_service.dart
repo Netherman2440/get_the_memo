@@ -207,32 +207,38 @@ class ProcessService extends ChangeNotifier {
     
     final hasErrors = process.steps.any((s) => s.status == StepStatus.failed);
     final allCompleted = process.steps.every((s) => s.status == StepStatus.completed);
+    print('hasErrors: $hasErrors');
+    print('allCompleted: $allCompleted');
     
     String title = 'Meeting Processing Status';
+    String body;
     
-    // Build detailed status message for each step
-    List<String> stepStatuses = process.steps.map((step) {
-      String statusText = switch (step.status) {
-        StepStatus.none => '⌛ In Queue',
-        StepStatus.inProgress => '🔄 In Progress',
-        StepStatus.completed => '✅ Completed',
-        StepStatus.failed => '❌ Failed',
-      };
+    if (allCompleted) {
+      body = 'All steps completed! Check the results.';
+    } else if (hasErrors) {
+      body = 'Processing failed. Please try again.';
+    } else {
+      // Find first in-progress step
+      var inProgressStep = process.steps.firstWhere(
+        (step) => step.status == StepStatus.inProgress,
+        orElse: () => process.steps.first,
+      );
       
-      // Format process type name to be more readable
-      String formattedName = switch (step.type) {
+      // Count completed steps
+      var completedCount = process.steps.where((s) => s.status == StepStatus.completed).length;
+      
+      // Format process type name
+      String stepName = switch (inProgressStep.type) {
         ProcessType.transcription => 'Transcription',
         ProcessType.summarize => 'Summary',
         ProcessType.actionPoints => 'Action Points',
         ProcessType.autoTitle => 'Auto Title',
         ProcessType.send => 'Send',
-        ProcessType.none => 'Unknown',
+        ProcessType.none => 'Processing',
       };
       
-      return '$formattedName: $statusText '+ '\n';
-    }).toList();
-    
-    String body = stepStatuses.join('');
+      body = '$stepName in progress... ($completedCount/${process.steps.length})';
+    }
 
     print('Showing notification - Title: $title, Body: $body');
     
@@ -240,7 +246,6 @@ class ProcessService extends ChangeNotifier {
       id: process.meetingId.hashCode,
       title: title,
       body: body,
-      // Play sound only when all steps are completed
       sound: allCompleted || hasErrors,
     ).then((_) {
       print('Notification shown successfully');
@@ -285,7 +290,7 @@ class Step {
         (p) => p.steps.contains(this)
         
       );
-      ProcessService._instance?._updateNotifications();
+      ProcessService._instance?._updateProcessNotification(process!);
       ProcessService._instance?.notifyListeners();
     }
   }

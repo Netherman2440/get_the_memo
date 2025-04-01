@@ -6,9 +6,40 @@ class NotificationService {
 
   static bool _isInitialized = false;
 
+  // Define channel IDs as constants
+  static const String quietChannelId = 'quiet_process_channel';
+  static const String loudChannelId = 'process_channel';
+
   // Initialize the notification service
   static Future<void> initialize() async {
     if (_isInitialized) return;
+
+    // Create both notification channels with different settings
+    final AndroidNotificationChannel quietChannel = AndroidNotificationChannel(
+      quietChannelId,
+      'Quiet Process Notifications',
+      description: 'Silent notifications for process status',
+      importance: Importance.low,
+      playSound: false,
+      enableVibration: false,
+      enableLights: false,
+    );
+
+    final AndroidNotificationChannel loudChannel = AndroidNotificationChannel(
+      loudChannelId,
+      'Process Notifications',
+      description: 'Important process notifications',
+      importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+      enableLights: true,
+    );
+
+    // Create both channels
+    final androidPlugin = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.createNotificationChannel(quietChannel);
+    await androidPlugin?.createNotificationChannel(loudChannel);
 
     // Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -77,31 +108,28 @@ class NotificationService {
     required String body,
     String? payload,
     int id = 0,
-    bool sound = false,
+    bool sound = false,  // This parameter determines which channel to use
   }) async {
-    print('Attempting to show notification');
     await initialize();
     
-    final enabled = await areNotificationsEnabled();
-    if (!enabled) {
-      print('Notifications are not enabled!');
-      await requestPermissions();
-    }
-    print('Showing notification with sound: $sound');
-    // Android notification details
+    // Choose channel and settings based on sound parameter
+    final String channelId = sound ? loudChannelId : quietChannelId;
+    
     final AndroidNotificationDetails androidNotificationDetails =
         AndroidNotificationDetails(
-          'process_channel', // Channel ID
-          'Process Notifications', // Channel name
-          channelDescription:
-              'Notifications for meeting processing status', // Channel description
-          importance: Importance.max,
-          priority: Priority.high,
-          showWhen: true,
+          channelId,
+          sound ? 'Process Notifications' : 'Quiet Process Notifications',
+          channelDescription: sound 
+              ? 'Important process notifications'
+              : 'Silent notifications for process status',
+          importance: sound ? Importance.high : Importance.low,
+          priority: sound ? Priority.high : Priority.low,
           playSound: sound,
+          enableVibration: sound,
+          enableLights: sound,
+          showWhen: false,
         );
 
-    // iOS notification details
     final DarwinNotificationDetails iosNotificationDetails =
         DarwinNotificationDetails(
           presentAlert: true,
@@ -109,13 +137,11 @@ class NotificationService {
           presentSound: sound,
         );
 
-    // General notification details
     final NotificationDetails notificationDetails = NotificationDetails(
       android: androidNotificationDetails,
       iOS: iosNotificationDetails,
     );
 
-    // Show the notification
     await _notificationsPlugin.show(
       id,
       title,
@@ -125,7 +151,13 @@ class NotificationService {
     );
   }
 
-  
+  // Add this utility method to clean up channels if needed during development
+  static Future<void> deleteNotificationChannels() async {
+    final androidPlugin = _notificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.deleteNotificationChannel(quietChannelId);
+    await androidPlugin?.deleteNotificationChannel(loudChannelId);
+  }
 
   // Cancel a specific notification
   static Future<void> cancelNotification(int id) async {

@@ -6,7 +6,33 @@ import 'package:get_the_memo/prompts/action_points.dart';
 import 'package:get_the_memo/prompts/auto_title.dart';
 import 'package:get_the_memo/services/api_key_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+
+class OpenAIException implements Exception {
+  final String message;
+  final String code;
+
+  OpenAIException({required this.message, required this.code});
+
+  @override
+  String toString() => 'OpenAIException: $message (Code: $code)';
+}
+
+class InvalidAPIKeyException extends OpenAIException {
+  InvalidAPIKeyException()
+      : super(
+          message: 'Invalid API key. Please check your OpenAI API key.',
+          code: 'invalid_api_key',
+        );
+}
+
+class InsufficientFundsException extends OpenAIException {
+  InsufficientFundsException()
+      : super(
+          message: 'Insufficient funds in your OpenAI account.',
+          code: 'insufficient_funds',
+        );
+}
 
 class OpenAIService {
   final String model = "o3-mini";
@@ -27,6 +53,12 @@ class OpenAIService {
       );
       return completion.choices.first.message;
     } catch (e) {
+      // Handle specific OpenAI errors
+      if (e.toString().contains('401')) {
+        throw InvalidAPIKeyException();
+      } else if (e.toString().contains('insufficient_quota')) {
+        throw InsufficientFundsException();
+      }
       print(e);
       return OpenAIChatCompletionChoiceMessageModel(
         role: OpenAIChatMessageRole.assistant,
@@ -62,7 +94,6 @@ class OpenAIService {
     } catch (e) {
       print(e);
       await DatabaseService.updateSummary(meetingId, 'Error: $e');
-
       return '';
     }
   }
@@ -113,26 +144,31 @@ class OpenAIService {
   }
 
   Future<String> autoTitle(String transcript, String id) async {
-    final messages = [
-      OpenAIChatCompletionChoiceMessageModel(
-        role: OpenAIChatMessageRole.system,
-        content: [
-          OpenAIChatCompletionChoiceMessageContentItemModel.text(autoTitlePrompt),
-        ],
-      ),
-      OpenAIChatCompletionChoiceMessageModel(
-        role: OpenAIChatMessageRole.user,
-        content: [
-          OpenAIChatCompletionChoiceMessageContentItemModel.text(transcript),
-        ],
-      ),
-    ];
-    final completion = await chat(messages);
-    final completionText = completion.content!.first.text!;
-    print('Completion Text: $completionText');
-    var json = jsonDecode(completionText);
-    print('JSON: $json');
-    await DatabaseService.insertAutoTitle(id, json['title'], json['description']);
-    return json['title'];
+    try {
+      final messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.system,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(autoTitlePrompt),
+          ],
+        ),
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.user,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(transcript),
+          ],
+        ),
+      ];
+      final completion = await chat(messages);
+      final completionText = completion.content!.first.text!;
+      print('Completion Text: $completionText');
+      var json = jsonDecode(completionText);
+      print('JSON: $json');
+      await DatabaseService.insertAutoTitle(id, json['title'], json['description']);
+      return json['title'];
+    } catch (e) {
+      print(e);
+      throw Exception('Failed to generate auto title: $e');
+    }
   }
 }

@@ -1,13 +1,15 @@
+import 'dart:math';
+
+import 'package:flutter/material.dart';
 import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/services/openai_service.dart';
 import 'package:get_the_memo/services/whisper_service.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get_the_memo/services/notification_service.dart';
 
 class ProcessService extends ChangeNotifier {
   static ProcessService? _instance;
-  
+
   ProcessService() {
     _instance = this;
     whisper_service.init();
@@ -20,27 +22,27 @@ class ProcessService extends ChangeNotifier {
   List<Process> processes = [];
 
   Future<void> process_Meeting(
+    BuildContext context,
     Meeting meeting,
     List<ProcessType> request,
   ) async {
     try {
-      print('Starting process_Meeting for meetingId: ${meeting.id}');
-      print('Requested processes: $request');
-      print('Audio URL: ${meeting.audioUrl}');
+      showSnackBar(context, 'Starting new process...', MessageType.success);
 
       Process? process = getProcess(meeting.id, request);
-      print('Existing process: ${process != null ? "found" : "not found"}');
-
       //check if there is a process for this meeting
       if (process != null) {
-        print('Checking existing process steps...');
         //check if the process contains all the steps in the request
         for (var type in request) {
           if (process.steps.any(
             (element) =>
                 element.type == type && element.status == StepStatus.inProgress,
           )) {
-            print('Found conflicting step: $type already in progress');
+            showSnackBar(
+              context,
+              'Process already contains steps that are in the request',
+              MessageType.error,
+            );
             throw Exception(
               'Process already contains steps that are in the request',
             );
@@ -50,52 +52,70 @@ class ProcessService extends ChangeNotifier {
 
       process = Process(meetingId: meeting.id, steps: []);
       processes.add(process);
-      print('Created new process for meeting: ${meeting.id}');
-      
-      
-      
+
       for (var type in request) {
         process.steps.add(Step(type: type));
       }
-      print('Added steps: ${process.steps.map((e) => e.type).toList()}'); 
 
       //get transcript
       String? transcript;
       if (request.contains(ProcessType.transcription)) {
-        print('Starting transcription process...');
         if (meeting.audioUrl == null) {
           throw Exception('Audio URL is null');
         }
-        
+
         Step step = process.steps[request.indexOf(ProcessType.transcription)];
         step.status = StepStatus.inProgress;
         try {
-          print('Calling whisper_service with audioPath: ${meeting.audioUrl}');
           transcript = await whisper_service.processTranscription(
             audioPath: meeting.audioUrl!,
             meetingId: meeting.id,
           );
 
-          print('Transcription completed. Length: ${transcript?.length ?? 0}');
           step.status = StepStatus.completed;
           step.result = transcript;
-        } catch (e, stackTrace) {
-          print('Error during transcription: $e');
-          print('Stack trace: $stackTrace');
+        } catch (e) {
           step.status = StepStatus.failed;
-          step.error = e.toString();
+          
+          // Handle specific OpenAI errors
+          if (e is InvalidAPIKeyException) {
+            step.error = 'Invalid API key. Please check your OpenAI API settings.';
+            showSnackBar(
+              context,
+              'Invalid API key. Please check your settings.',
+              MessageType.error,
+              duration: 5,
+            );
+          } else if (e is InsufficientFundsException) {
+            step.error = 'Insufficient funds in your OpenAI account.';
+            showSnackBar(
+              context,
+              'Insufficient funds in your OpenAI account. Please add credits.',
+              MessageType.error,
+              duration: 5,
+            );
+          } else {
+            step.error = e.toString();
+            showSnackBar(
+              context,
+              'Error during transcription: $e',
+              MessageType.error,
+            );
+          }
           rethrow;
         }
       } else {
         //get transcript from database
-        print('Fetching existing transcription from database...');
         transcript = await DatabaseService.getTranscription(meeting.id);
-        print('Database transcript result: ${transcript != null ? "found" : "not found"}');
       }
 
       if (transcript == null) {
-        print('No transcript available - neither from transcription nor database');
-        throw Exception('Transcript not found');
+        showSnackBar(
+          context,
+          'Transcription failed',
+          MessageType.error,
+        );
+        throw Exception('Transcription failed');
       }
 
       //process steps
@@ -113,20 +133,27 @@ class ProcessService extends ChangeNotifier {
       }
       //TODO: add more steps here
 
-
       final results = await Future.wait(steps);
 
       //update process
       notifyListeners();
       //processes.remove(process);  //TODO: there is a better way to do this
-    } catch (e, stackTrace) {
-      // Show error notification
-      NotificationService.showNotification(
-        id: meeting.id.hashCode,
-        title: 'Processing Error',
-        body: 'Failed to process meeting: ${e.toString()}',
+    } catch (e) {
+      // Don't show additional error notification if it's already handled
+      if (!(e is InvalidAPIKeyException || e is InsufficientFundsException)) {
+        NotificationService.showNotification(
+          id: meeting.id.hashCode,
+          title: 'Processing Error',
+          body: 'Failed to process meeting: ${e.toString()}',
+        );
+      }
+      
+      showSnackBar(
+        context,
+        'Error processing meeting: $e',
+        MessageType.error,
       );
-      throw Exception('Error processing meeting: $e, $stackTrace');
+      throw Exception('Error processing meeting: $e');
     }
   }
 
@@ -184,7 +211,7 @@ class ProcessService extends ChangeNotifier {
         .where((element) => element.meetingId == meetingId)
         .toList();
   }
-  
+
   Future<void> autoTitle(String transcript, String id) async {
     Process process = getProcess(id, [ProcessType.autoTitle])!;
     int index = process.steps.indexWhere(
@@ -204,15 +231,17 @@ class ProcessService extends ChangeNotifier {
   // Add this method to update notification for a process
   void _updateProcessNotification(Process process) {
     print('Updating notification for process: ${process.meetingId}');
-    
+
     final hasErrors = process.steps.any((s) => s.status == StepStatus.failed);
-    final allCompleted = process.steps.every((s) => s.status == StepStatus.completed);
+    final allCompleted = process.steps.every(
+      (s) => s.status == StepStatus.completed,
+    );
     print('hasErrors: $hasErrors');
     print('allCompleted: $allCompleted');
-    
+
     String title = 'Meeting Processing Status';
     String body;
-    
+
     if (allCompleted) {
       body = 'All steps completed! Check the results.';
     } else if (hasErrors) {
@@ -223,10 +252,11 @@ class ProcessService extends ChangeNotifier {
         (step) => step.status == StepStatus.inProgress,
         orElse: () => process.steps.first,
       );
-      
+
       // Count completed steps
-      var completedCount = process.steps.where((s) => s.status == StepStatus.completed).length;
-      
+      var completedCount =
+          process.steps.where((s) => s.status == StepStatus.completed).length;
+
       // Format process type name
       String stepName = switch (inProgressStep.type) {
         ProcessType.transcription => 'Transcription',
@@ -236,24 +266,27 @@ class ProcessService extends ChangeNotifier {
         ProcessType.send => 'Send',
         ProcessType.none => 'Processing',
       };
-      
-      body = '$stepName in progress... ($completedCount/${process.steps.length})';
+
+      body =
+          '$stepName in progress... ($completedCount/${process.steps.length})';
     }
 
     print('Showing notification - Title: $title, Body: $body');
-    
+
     NotificationService.showNotification(
-      id: process.meetingId.hashCode,
-      title: title,
-      body: body,
-      sound: allCompleted || hasErrors,
-    ).then((_) {
-      print('Notification shown successfully');
-    }).catchError((error) {
-      print('Error showing notification: $error');
-    });
+          id: process.meetingId.hashCode,
+          title: title,
+          body: body,
+          sound: allCompleted || hasErrors,
+        )
+        .then((_) {
+          print('Notification shown successfully');
+        })
+        .catchError((error) {
+          print('Error showing notification: $error');
+        });
   }
-  
+
   void _updateNotifications() {
     print('Updating notifications');
     for (var process in processes) {
@@ -263,7 +296,52 @@ class ProcessService extends ChangeNotifier {
       }
     }
   }
+
+  void showSnackBar(
+    BuildContext context,
+    String message,
+    MessageType type, {
+    int duration = 2,  // Default duration of 2 seconds
+  }) {
+    Color backgroundColor = switch (type) {
+      MessageType.success => Theme.of(context).colorScheme.primary,
+      MessageType.error => Theme.of(context).colorScheme.error,
+      _ => Theme.of(context).colorScheme.primary,
+    };
+    Color textColor = switch (type) {
+      MessageType.success => Theme.of(context).colorScheme.onPrimary,
+      MessageType.error => Theme.of(context).colorScheme.onError,
+      _ => Theme.of(context).colorScheme.onPrimary,
+    };
+
+    final controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: ScaffoldMessenger.of(context),
+    );
+
+    
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: TextStyle(color: textColor),
+        ),
+        duration: Duration(seconds: duration),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 100, left: 10, right: 10),
+        backgroundColor: backgroundColor,
+      ),
+    );
+
+    if (type == MessageType.error) {
+      controller.forward();
+    }
+  }
 }
+
+enum MessageType { success, error }
 
 class Process {
   String meetingId;
@@ -271,7 +349,11 @@ class Process {
   Process({required this.meetingId, required this.steps});
 
   bool isInProgress() {
-    return steps.any((step) => step.status == StepStatus.inProgress || step.status == StepStatus.none);
+    return steps.any(
+      (step) =>
+          step.status == StepStatus.inProgress ||
+          step.status == StepStatus.none,
+    );
   }
 }
 
@@ -287,8 +369,7 @@ class Step {
       _status = value;
       // Add direct notification update
       final process = ProcessService._instance?.processes.firstWhere(
-        (p) => p.steps.contains(this)
-        
+        (p) => p.steps.contains(this),
       );
       ProcessService._instance?._updateProcessNotification(process!);
       ProcessService._instance?.notifyListeners();
@@ -308,3 +389,16 @@ enum ProcessType {
 }
 
 enum StepStatus { none, inProgress, completed, failed }
+
+// Add this custom curve for shake animation
+class ShakeCurve extends Curve {
+  final int count;
+  final double intensity;
+
+  const ShakeCurve({this.count = 3, this.intensity = 1});
+
+  @override
+  double transformInternal(double t) {
+    return sin(count * 2 * pi * t) * intensity * (1 - t);
+  }
+}

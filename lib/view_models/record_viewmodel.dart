@@ -132,8 +132,8 @@ class RecordViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> processMeeting(Meeting meeting, List<ProcessType> request) async {
-    await processService.process_Meeting(meeting, request);
+  Future<void> processMeeting(BuildContext context, Meeting meeting, List<ProcessType> request) async {
+    await processService.process_Meeting(context, meeting, request);
   }
 
 

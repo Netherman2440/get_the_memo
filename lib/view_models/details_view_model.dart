@@ -58,23 +58,23 @@ class DetailsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> createTranscript(String meetingId) async {
+  Future<void> createTranscript(BuildContext context,String meetingId) async {
     
     String audioPath = meeting?.audioUrl ?? '';
 
-    await processService.process_Meeting(meeting!, [ProcessType.transcription]);
+    await processService.process_Meeting(context,meeting!, [ProcessType.transcription]);
     
     notifyListeners();
   }
 
-  Future<void> createSummary(String meetingId) async {
-    await processService.process_Meeting(meeting!, [ProcessType.summarize]);
+  Future<void> createSummary(BuildContext context,String meetingId) async {
+    await processService.process_Meeting(context,meeting!, [ProcessType.summarize]);
     notifyListeners();
   }
 
-  Future<void> createTasks(String meetingId) async {
+  Future<void> createTasks(BuildContext context,String meetingId) async {
     
-    await processService.process_Meeting(meeting!, [ProcessType.actionPoints]);
+    await processService.process_Meeting(context,meeting!, [ProcessType.actionPoints]);
     notifyListeners();
   }
 
@@ -166,7 +166,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
-            createTranscript(meeting!.id);
+            createTranscript(context,meeting!.id);
           },
           child: const Text('Create Transcript'),
         );
@@ -215,7 +215,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
-            createTranscript(meeting!.id);
+            createTranscript(context,meeting!.id);
           },
           child: const Text('Retry Transcription'),
         );
@@ -236,7 +236,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
-            createSummary(meeting!.id);
+            createSummary(context,meeting!.id);
           },
           child: const Text('Create Summary'),
         );
@@ -285,7 +285,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
-            createSummary(meeting!.id);
+            createSummary(context,meeting!.id);
           },
           child: const Text('Retry Summary'),
         );
@@ -305,7 +305,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
-            createTasks(meeting!.id);
+            createTasks(context,meeting!.id);
           },
           child: const Text('Create Action Points'),
         );
@@ -368,7 +368,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
-            createTasks(meeting!.id);
+            createTasks(context,meeting!.id);
           },
           child: const Text('Retry Action Points'),
         );

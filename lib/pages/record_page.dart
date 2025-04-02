@@ -173,6 +173,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
             if (autoTitle) selectedOptions.add(ProcessType.autoTitle);
             // Process the meeting with selected options
             viewModel.processMeeting(
+              context,
               viewModel.currentMeeting!, 
               selectedOptions
             );

@@ -1,5 +1,6 @@
 import 'package:get_the_memo/services/api_key_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
+import 'package:get_the_memo/services/openai_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io';
 import 'dart:math';
@@ -18,27 +19,45 @@ class WhisperService {
   }
 
   Future<String> transcribeAudio(String audioPath) async {
-    var request = http.MultipartRequest(
-      'POST',
-      Uri.parse('https://api.openai.com/v1/audio/transcriptions'),
-    );
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://api.openai.com/v1/audio/transcriptions'),
+      );
 
-    request.headers.addAll({
-      'Authorization': 'Bearer $apiKey',
-      'Content-Type': 'multipart/form-data',
-    });
+      request.headers.addAll({
+        'Authorization': 'Bearer $apiKey',
+        'Content-Type': 'multipart/form-data',
+      });
 
-    request.files.add(await http.MultipartFile.fromPath('file', audioPath));
-    request.fields['model'] = 'whisper-1';
-    request.fields['response_format'] = 'verbose_json';
-    request.fields['timestamp_granularities[]'] = 'segment';
+      request.files.add(await http.MultipartFile.fromPath('file', audioPath));
+      request.fields['model'] = 'whisper-1';
+      request.fields['response_format'] = 'verbose_json';
+      request.fields['timestamp_granularities[]'] = 'segment';
 
-    var response = await request.send();
-    if (response.statusCode == 200) {
-      var responseBody = await response.stream.bytesToString();
-      return responseBody;
-    } else {
-      throw Exception('Failed to transcribe audio: ${response.statusCode} ${response.reasonPhrase}');
+      var response = await request.send();
+      if (response.statusCode == 200) {
+        var responseBody = await response.stream.bytesToString();
+        return responseBody;
+      } else {
+        var error = await response.stream.bytesToString();
+        var errorJson = jsonDecode(error);
+        
+        // Handle specific error cases
+        if (response.statusCode == 401) {
+          throw InvalidAPIKeyException();
+        } else if (response.statusCode == 429 && 
+                   errorJson['error']?['code'] == 'insufficient_quota') {
+          throw InsufficientFundsException();
+        }
+        
+        throw Exception('Failed to transcribe audio: ${response.statusCode} - ${errorJson['error']?['message'] ?? response.reasonPhrase}');
+      }
+    } catch (e) {
+      if (e is InvalidAPIKeyException || e is InsufficientFundsException) {
+        rethrow;
+      }
+      throw Exception('Failed to transcribe audio: $e');
     }
   }
 

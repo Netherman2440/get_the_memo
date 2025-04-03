@@ -314,13 +314,6 @@ class ProcessService extends ChangeNotifier {
       _ => Theme.of(context).colorScheme.onPrimary,
     };
 
-    final controller = AnimationController(
-      duration: const Duration(milliseconds: 500),
-      vsync: ScaffoldMessenger.of(context),
-    );
-
-    
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -330,14 +323,10 @@ class ProcessService extends ChangeNotifier {
         duration: Duration(seconds: duration),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.only(bottom: 100, left: 10, right: 10),
+        margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
         backgroundColor: backgroundColor,
       ),
     );
-
-    if (type == MessageType.error) {
-      controller.forward();
-    }
   }
 }
 
@@ -352,7 +341,8 @@ class Process {
     return steps.any(
       (step) =>
           step.status == StepStatus.inProgress ||
-          step.status == StepStatus.none,
+          step.status == StepStatus.none
+          
     );
   }
 }
@@ -376,7 +366,9 @@ class Step {
     }
   }
 
-  Step({required this.type, this.result, this.error});
+  Step({required this.type, this.result, this.error}){
+    _status = StepStatus.queue;
+  }
 }
 
 enum ProcessType {
@@ -390,15 +382,3 @@ enum ProcessType {
 
 enum StepStatus { none, queue, inProgress, completed, failed }
 
-// Add this custom curve for shake animation
-class ShakeCurve extends Curve {
-  final int count;
-  final double intensity;
-
-  const ShakeCurve({this.count = 3, this.intensity = 1});
-
-  @override
-  double transformInternal(double t) {
-    return sin(count * 2 * pi * t) * intensity * (1 - t);
-  }
-}

@@ -388,7 +388,7 @@ enum ProcessType {
   send,
 }
 
-enum StepStatus { none, inProgress, completed, failed }
+enum StepStatus { none, queue, inProgress, completed, failed }
 
 // Add this custom curve for shake animation
 class ShakeCurve extends Curve {

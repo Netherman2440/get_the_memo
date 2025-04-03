@@ -1,19 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/models/meeting.dart';
-
 import 'package:get_the_memo/services/database_service.dart';
-import 'package:get_the_memo/services/openai_service.dart';
 import 'package:get_the_memo/services/process_service.dart';
-import 'package:get_the_memo/services/whisper_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DetailsViewModel extends ChangeNotifier {
-
-  
-
   Meeting? meeting;
   String? _meetingId;
   String? transcript;
@@ -38,16 +30,19 @@ class DetailsViewModel extends ChangeNotifier {
     _meetingId = meetingId;
 
     try {
-      transcriptionStatus = await getStepStatus(meetingId, ProcessType.transcription);
+      transcriptionStatus = await getStepStatus(
+        meetingId,
+        ProcessType.transcription,
+      );
       summaryStatus = await getStepStatus(meetingId, ProcessType.summarize);
       tasksStatus = await getStepStatus(meetingId, ProcessType.actionPoints);
       meeting = await DatabaseService.getMeeting(meetingId);
-      
+
       //await DatabaseService.debugListAllTranscriptions();
-      
+
       transcript = await DatabaseService.getTranscription(meetingId);
       print('Loaded transcript: $transcript');
-      
+
       summary = await DatabaseService.getSummary(meetingId);
       var tasksJson = await DatabaseService.getTasks(meetingId);
       tasks = List<String>.from(jsonDecode(tasksJson ?? '[]'));
@@ -58,23 +53,27 @@ class DetailsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> createTranscript(BuildContext context,String meetingId) async {
-    
+  Future<void> createTranscript(BuildContext context, String meetingId) async {
     String audioPath = meeting?.audioUrl ?? '';
 
-    await processService.process_Meeting(context,meeting!, [ProcessType.transcription]);
-    
+    await processService.process_Meeting(context, meeting!, [
+      ProcessType.transcription,
+    ]);
+
     notifyListeners();
   }
 
-  Future<void> createSummary(BuildContext context,String meetingId) async {
-    await processService.process_Meeting(context,meeting!, [ProcessType.summarize]);
+  Future<void> createSummary(BuildContext context, String meetingId) async {
+    await processService.process_Meeting(context, meeting!, [
+      ProcessType.summarize,
+    ]);
     notifyListeners();
   }
 
-  Future<void> createTasks(BuildContext context,String meetingId) async {
-    
-    await processService.process_Meeting(context,meeting!, [ProcessType.actionPoints]);
+  Future<void> createTasks(BuildContext context, String meetingId) async {
+    await processService.process_Meeting(context, meeting!, [
+      ProcessType.actionPoints,
+    ]);
     notifyListeners();
   }
 
@@ -147,15 +146,15 @@ class DetailsViewModel extends ChangeNotifier {
     if (processService.exists(meetingId)) {
       final process = processService.getProcess(meetingId, [type]);
       if (process != null) {
-        final step = process.steps.firstWhere((element) => element.type == type);
+        final step = process.steps.firstWhere(
+          (element) => element.type == type,
+        );
         status = step.status;
       }
     }
 
     return status;
   }
-
-  
 
   Widget getTranscriptionSection(BuildContext context) {
     var _transcriptionStatus = transcriptionStatus;
@@ -166,9 +165,14 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
-            createTranscript(context,meeting!.id);
+            createTranscript(context, meeting!.id);
           },
           child: const Text('Create Transcript'),
+        );
+      case StepStatus.queue:
+        return ElevatedButton(
+          onPressed: null,
+          child: const Text('Transcription in queue'),
         );
       case StepStatus.inProgress:
         return ElevatedButton(
@@ -215,7 +219,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
-            createTranscript(context,meeting!.id);
+            createTranscript(context, meeting!.id);
           },
           child: const Text('Retry Transcription'),
         );
@@ -231,14 +235,18 @@ class DetailsViewModel extends ChangeNotifier {
       _summaryStatus = StepStatus.completed;
     }
 
-
     switch (_summaryStatus) {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
-            createSummary(context,meeting!.id);
+            createSummary(context, meeting!.id);
           },
           child: const Text('Create Summary'),
+        );
+      case StepStatus.queue:
+        return ElevatedButton(
+          onPressed: null,
+          child: const Text('Summary in queue'),
         );
       case StepStatus.inProgress:
         return ElevatedButton(
@@ -285,7 +293,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
-            createSummary(context,meeting!.id);
+            createSummary(context, meeting!.id);
           },
           child: const Text('Retry Summary'),
         );
@@ -305,9 +313,14 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
-            createTasks(context,meeting!.id);
+            createTasks(context, meeting!.id);
           },
           child: const Text('Create Action Points'),
+        );
+      case StepStatus.queue:
+        return ElevatedButton(
+          onPressed: null,
+          child: const Text('Action Points in queue'),
         );
       case StepStatus.inProgress:
         return ElevatedButton(
@@ -368,7 +381,7 @@ class DetailsViewModel extends ChangeNotifier {
       case StepStatus.failed:
         return ElevatedButton(
           onPressed: () {
-            createTasks(context,meeting!.id);
+            createTasks(context, meeting!.id);
           },
           child: const Text('Retry Action Points'),
         );
@@ -479,7 +492,6 @@ ${transcript ?? "No transcript available"}
     // Create the URL
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      path: 'zajacignacy@gmail.com', // recipient email address
       query: encodeQueryParameters({'subject': subject, 'body': body}),
     );
 

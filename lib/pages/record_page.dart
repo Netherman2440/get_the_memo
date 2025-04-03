@@ -115,6 +115,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
   @override
   Widget build(BuildContext context) {
     final viewModel = context.read<RecordViewModel>();
+    
     return AlertDialog(
       title: Text('Processing Options'),
       content: Column(
@@ -126,9 +127,17 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
             onChanged: (bool? value) {
               setState(() {
                 transcribe = value ?? false;
+
+                if(!transcribe) {
+                  summarize = false;
+                  extractTasks = false;
+                  autoTitle = false;
+                }
+                
               });
             },
           ),
+          if(transcribe) ...[
           CheckboxListTile(
             title: Text('Auto Title'),
             value: autoTitle,
@@ -156,6 +165,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
               });
             },
           ),
+          ],
         ],
       ),
       actions: [

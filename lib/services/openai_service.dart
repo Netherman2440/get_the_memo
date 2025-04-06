@@ -65,6 +65,7 @@ class OpenAIService {
         model: model,
         messages: messages,
       );
+      print('Completion: $completion');
       return completion.choices.first.message;
     } catch (e) {
       // Handle specific OpenAI errors
@@ -74,11 +75,9 @@ class OpenAIService {
         throw InsufficientFundsException();
       }
       print(e);
-      return OpenAIChatCompletionChoiceMessageModel(
-        role: OpenAIChatMessageRole.assistant,
-        content: [
-          OpenAIChatCompletionChoiceMessageContentItemModel.text('Error: $e'),
-        ],
+      throw OpenAIException(
+        message: e.toString(),
+        code: 'openai_error'
       );
     }
   }
@@ -107,8 +106,8 @@ class OpenAIService {
       return completionText;
     } catch (e) {
       print(e);
-      await DatabaseService.updateSummary(meetingId, 'Error: $e');
-      return '';
+      //await DatabaseService.updateSummary(meetingId, 'Error: $e');
+      throw e;
     }
   }
 
@@ -152,8 +151,8 @@ class OpenAIService {
       return tasksJson;
     } catch (e) {
       print(e);
-      await DatabaseService.updateTasks(meetingId, 'Error: $e');
-      return '';
+      //await DatabaseService.updateTasks(meetingId, 'Error: $e');
+      throw e;
     }
   }
 

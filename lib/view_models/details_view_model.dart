@@ -45,7 +45,12 @@ class DetailsViewModel extends ChangeNotifier {
 
       summary = await DatabaseService.getSummary(meetingId);
       var tasksJson = await DatabaseService.getTasks(meetingId);
-      tasks = List<String>.from(jsonDecode(tasksJson ?? '[]'));
+      try {
+        tasks = List<String>.from(jsonDecode(tasksJson ?? '[]'));
+      } catch (e) {
+        print('Error decoding tasks: $e');
+        tasks = [];
+      }
     } catch (e, stackTrace) {
       print('Failed to load meeting details: $e\nStack trace:\n$stackTrace');
     }

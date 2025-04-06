@@ -66,7 +66,7 @@ class ProcessService extends ChangeNotifier {
 
         Step step = process.steps[request.indexOf(ProcessType.transcription)];
         step.status = StepStatus.inProgress;
-        try {
+        //
           transcript = await whisper_service.processTranscription(
             audioPath: meeting.audioUrl!,
             meetingId: meeting.id,
@@ -74,12 +74,13 @@ class ProcessService extends ChangeNotifier {
 
           step.status = StepStatus.completed;
           step.result = transcript;
-        } catch (e) {
+        /*} catch (e) {
           step.status = StepStatus.failed;
-          
+
           // Handle specific OpenAI errors
           if (e is InvalidAPIKeyException) {
-            step.error = 'Invalid API key. Please check your OpenAI API settings.';
+            step.error =
+                'Invalid API key. Please check your OpenAI API settings.';
             showSnackBar(
               context,
               'Invalid API key. Please check your settings.',
@@ -104,17 +105,15 @@ class ProcessService extends ChangeNotifier {
           }
           rethrow;
         }
-      } else {
+        */
+      }
+       else {
         //get transcript from database
         transcript = await DatabaseService.getTranscription(meeting.id);
       }
 
       if (transcript == null) {
-        showSnackBar(
-          context,
-          'Transcription failed',
-          MessageType.error,
-        );
+        showSnackBar(context, 'Transcription failed', MessageType.error);
         throw Exception('Transcription failed');
       }
 
@@ -147,12 +146,9 @@ class ProcessService extends ChangeNotifier {
           body: 'Failed to process meeting: ${e.toString()}',
         );
       }
-      
-      showSnackBar(
-        context,
-        'Error processing meeting: $e',
-        MessageType.error,
-      );
+      print('Error processing meeting: $e');
+
+      showSnackBar(context, 'Error processing meeting: $e', MessageType.error);
       throw Exception('Error processing meeting: $e');
     }
   }
@@ -171,6 +167,7 @@ class ProcessService extends ChangeNotifier {
     } catch (e) {
       step.status = StepStatus.failed;
       step.error = e.toString();
+      throw e;
     }
   }
 
@@ -187,6 +184,7 @@ class ProcessService extends ChangeNotifier {
     } catch (e) {
       step.status = StepStatus.failed;
       step.error = e.toString();
+      throw e;
     }
   }
 
@@ -225,6 +223,7 @@ class ProcessService extends ChangeNotifier {
     } catch (e) {
       step.status = StepStatus.failed;
       step.error = e.toString();
+      throw e;
     }
   }
 
@@ -300,9 +299,7 @@ class ProcessService extends ChangeNotifier {
   void showSnackBar(
     BuildContext context,
     String message,
-    MessageType type, {
-    int duration = 2,  // Default duration of 2 seconds
-  }) {
+    MessageType type) {
     Color backgroundColor = switch (type) {
       MessageType.success => Theme.of(context).colorScheme.primary,
       MessageType.error => Theme.of(context).colorScheme.error,
@@ -313,13 +310,11 @@ class ProcessService extends ChangeNotifier {
       MessageType.error => Theme.of(context).colorScheme.onError,
       _ => Theme.of(context).colorScheme.onPrimary,
     };
-
+    ScaffoldMessenger.of(context).clearSnackBars();
+    int duration = type == MessageType.error ? 3 : 1;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          style: TextStyle(color: textColor),
-        ),
+        content: Text(message, style: TextStyle(color: textColor)),
         duration: Duration(seconds: duration),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         behavior: SnackBarBehavior.floating,
@@ -341,8 +336,7 @@ class Process {
     return steps.any(
       (step) =>
           step.status == StepStatus.inProgress ||
-          step.status == StepStatus.none
-          
+          step.status == StepStatus.none,
     );
   }
 }
@@ -366,7 +360,7 @@ class Step {
     }
   }
 
-  Step({required this.type, this.result, this.error}){
+  Step({required this.type, this.result, this.error}) {
     _status = StepStatus.queue;
   }
 }
@@ -381,4 +375,3 @@ enum ProcessType {
 }
 
 enum StepStatus { none, queue, inProgress, completed, failed }
-

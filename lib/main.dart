@@ -38,9 +38,26 @@ class MyApp extends StatelessWidget {
       create: (_) => processService,
       child: MaterialApp(
         title: 'Get the Memo',
+        themeMode: ThemeMode.dark,
         theme: ThemeData(
           useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
+          fontFamily: "JetBrains Mono",
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color.fromARGB(255, 46, 77, 129),
+            brightness: Brightness.light,
+          ),
+        ),
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          fontFamily: "JetBrains Mono",
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          ).copyWith(
+            background: Colors.black,
+            surface: Colors.grey[900],
+          ),
         ),
         home: HomePage(),
       ),

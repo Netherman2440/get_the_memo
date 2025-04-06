@@ -6,7 +6,17 @@ import 'package:get_the_memo/prompts/action_points.dart';
 import 'package:get_the_memo/prompts/auto_title.dart';
 import 'package:get_the_memo/services/api_key_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+enum OpenAIModel {
+  gpt4oMini('gpt-4o-mini'),
+  gpt4o('gpt-4o'),
+  gpt35Turbo('gpt-3.5-turbo'),
+  o3Mini('o3-mini');
+
+  final String modelId;
+  const OpenAIModel(this.modelId);
+}
 
 class OpenAIException implements Exception {
   final String message;
@@ -35,12 +45,16 @@ class InsufficientFundsException extends OpenAIException {
 }
 
 class OpenAIService {
-  final String model = "o3-mini";
+  late String model;
 
   Future<void> init() async {
     final apiKeyService = ApiKeyService();
     OpenAI.apiKey = await apiKeyService.getApiKey();
     OpenAI.requestsTimeOut = const Duration(seconds: 3600);
+    
+    final prefs = await SharedPreferences.getInstance();
+    final savedModel = prefs.getString('openai_model') ?? OpenAIModel.o3Mini.modelId;
+    model = savedModel;
   }
 
   Future<OpenAIChatCompletionChoiceMessageModel> chat(

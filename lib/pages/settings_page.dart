@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_the_memo/services/api_key_service.dart';
+import 'package:get_the_memo/services/openai_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -13,14 +15,26 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _showApiKey = false;
   bool _showSecurityInfo = false;
 
+  bool darkMode = true;
+  OpenAIModel _openaiModel = OpenAIModel.o3Mini;
+  SharedPreferences? prefs;
+
   @override
   void initState() {
     super.initState();
-    _loadApiKey();
+
+    _loadPrefs();
   }
 
-  Future<void> _loadApiKey() async {
+  Future<void> _loadPrefs() async {
     final apiKey = await _apiKeyService.getApiKey();
+    prefs = await SharedPreferences.getInstance();
+    final savedModel =
+        prefs?.getString('openai_model') ?? OpenAIModel.o3Mini.modelId;
+    _openaiModel = OpenAIModel.values.firstWhere(
+      (e) => e.modelId == savedModel,
+    );
+    darkMode = prefs?.getBool('dark_mode') ?? true; 
     setState(() {
       _apiKey = apiKey;
     });
@@ -48,7 +62,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ],
             ),
             tileColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-            
+
             subtitle: TextField(
               maxLines: 1,
               onTap: () {
@@ -109,10 +123,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   SizedBox(height: 8),
                   InkWell(
-                    onTap: () => launchUrl(
-                      Uri.parse('https://github.com/Netherman2440/get_the_memo'),
-                      mode: LaunchMode.externalApplication,
-                    ),
+                    onTap:
+                        () => launchUrl(
+                          Uri.parse(
+                            'https://github.com/Netherman2440/get_the_memo',
+                          ),
+                          mode: LaunchMode.externalApplication,
+                        ),
                     child: Text(
                       'View source code on GitHub',
                       style: TextStyle(
@@ -124,10 +141,13 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   SizedBox(height: 8),
                   InkWell(
-                    onTap: () => launchUrl(
-                      Uri.parse('https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key'),
-                      mode: LaunchMode.externalApplication,
-                    ),
+                    onTap:
+                        () => launchUrl(
+                          Uri.parse(
+                            'https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key',
+                          ),
+                          mode: LaunchMode.externalApplication,
+                        ),
                     child: Text(
                       'How to get OPENAI API Key?',
                       style: TextStyle(
@@ -136,12 +156,44 @@ class _SettingsPageState extends State<SettingsPage> {
                         fontSize: 12,
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  title: Text('OpenAI Model'),
+
+                  subtitle: DropdownButton<OpenAIModel>(
+                    value: _openaiModel,
+                    dropdownColor:
+                        Theme.of(context).colorScheme.surfaceContainerHigh,
+                    onChanged: (value) {
+                      setState(() {
+                        _openaiModel = value!;
+                        prefs?.setString('openai_model', value.modelId);
+                      });
+                    },
+                    items:
+                        OpenAIModel.values
+                            .map(
+                              (e) => DropdownMenuItem(
+                                value: e,
+                                child: Text(e.modelId),
+                              ),
+                            )
+                            .toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
         ],
       ),
     );
   }
+  
 }

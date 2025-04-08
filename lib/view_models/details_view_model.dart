@@ -25,6 +25,12 @@ class DetailsViewModel extends ChangeNotifier {
   String? originalTranscript;
   String? originalSummary;
 
+  // Add new properties for editing states
+  bool isTitleEditing = false;
+  bool isDescriptionEditing = false;
+  String? originalTitle;
+  String? originalDescription;
+
   // Constructor that accepts meetingId
   DetailsViewModel({required this.processService, String? meetingId}) {
     if (meetingId != null) {

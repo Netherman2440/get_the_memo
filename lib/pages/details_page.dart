@@ -28,73 +28,149 @@ class DetailsPageContent extends StatelessWidget {
         child: Column(
           children: [
             // Title section - centered
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Title',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () {
-                      viewModel.showEditDialog(
-                        context: context,
-                        title: 'Edit Title',
-                        initialContent: viewModel.meeting?.title ?? '',
-                        onSave: (newTitle) {
-                          viewModel.editTitle(newTitle);
-                        },
-                      );
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
+            Card(
+              margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+              color: Colors.transparent,
+              elevation: 0,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Center(
                       child: Text(
-                        '${viewModel.meeting?.title}',
-                        style: TextStyle(fontSize: 24),
+                        'Title',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                    GestureDetector(
+                      onTap: () {
+                        viewModel.isTitleEditing = true;
+                        viewModel.originalTitle = viewModel.meeting?.title;
+                        viewModel.notifyListeners();
+                      },
+                      child: viewModel.isTitleEditing 
+                        ? Column(
+                            children: [
+                              TextField(
+                                controller: TextEditingController(text: viewModel.meeting?.title),
+                                maxLines: null,
+                                autofocus: true,
+                                style: TextStyle(fontSize: 24),
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: 'Enter title here',
+                                ),
+                                onChanged: (value) {
+                                  viewModel.meeting?.title = value;
+                                },
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      viewModel.isTitleEditing = false;
+                                      viewModel.meeting?.title = viewModel.originalTitle ?? '';
+                                      viewModel.notifyListeners();
+                                    },
+                                    child: Text('Cancel'),
+                                  ),
+                                  SizedBox(width: 8),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      viewModel.isTitleEditing = false;
+                                      viewModel.editTitle(viewModel.meeting?.title ?? '');
+                                    },
+                                    child: Text('Save'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Text(
+                            viewModel.meeting?.title ?? '',
+                            style: TextStyle(fontSize: 24),
+                          ),
+                    ),
+                  ],
+                ),
               ),
             ),
             // Description section - left aligned
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Description',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () {
-                      viewModel.showEditDialog(
-                        context: context,
-                        title: 'Edit Description',
-                        initialContent: viewModel.meeting?.description ?? '',
-                        onSave: (newDescription) {
-                          viewModel.editDescription(newDescription);
-                        },
-                      );
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        '${viewModel.meeting?.description}',
-                        style: TextStyle(fontSize: 16),
+            Card(
+              margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+              color: Colors.transparent,
+              elevation: 0,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Description',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
                       ),
                     ),
-                  ),
-                ],
+                    GestureDetector(
+                      onTap: () {
+                        viewModel.isDescriptionEditing = true;
+                        viewModel.originalDescription = viewModel.meeting?.description;
+                        viewModel.notifyListeners();
+                      },
+                      child: viewModel.isDescriptionEditing 
+                        ? Column(
+                            children: [
+                              TextField(
+                                controller: TextEditingController(text: viewModel.meeting?.description),
+                                maxLines: null,
+                                autofocus: true,
+                                style: TextStyle(fontSize: 16),
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: 'Enter description here',
+                                ),
+                                onChanged: (value) {
+                                  viewModel.meeting?.description = value;
+                                },
+                              ),
+                              SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () {
+                                      viewModel.isDescriptionEditing = false;
+                                      viewModel.meeting?.description = viewModel.originalDescription ?? '';
+                                      viewModel.notifyListeners();
+                                    },
+                                    child: Text('Cancel'),
+                                  ),
+                                  SizedBox(width: 8),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      viewModel.isDescriptionEditing = false;
+                                      viewModel.editDescription(viewModel.meeting?.description ?? '');
+                                    },
+                                    child: Text('Save'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Text(
+                            viewModel.meeting?.description ?? '',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                    ),
+                  ],
+                ),
               ),
             ),
             SizedBox(height: 10),

@@ -27,14 +27,20 @@ class DetailsPageContent extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            Card(
-              margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: ExpansionTile(
-                title: Text('Title'),
+            // Title section - centered
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  ListTile(
-                    subtitle: Text('${viewModel.meeting?.title}'),
+                  Text(
+                    'Title',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  InkWell(
                     onTap: () {
                       viewModel.showEditDialog(
                         context: context,
@@ -45,31 +51,48 @@ class DetailsPageContent extends StatelessWidget {
                         },
                       );
                     },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        '${viewModel.meeting?.title}',
+                        style: TextStyle(fontSize: 24),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 10),
-            Card(
-              margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: ExpansionTile(
-                title: Text('Description'),
+            // Description section - left aligned
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ListTile(
-                    title: Text('Description'),
-                    subtitle: Text('${viewModel.meeting?.description}'),
-                    
+                  Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  InkWell(
                     onTap: () {
-                    viewModel.showEditDialog(
-                      context: context,
-                      title: 'Edit Description',
-                      initialContent: viewModel.meeting?.description ?? '',
-                      onSave: (newDescription) {
-                        viewModel.editDescription(newDescription);
-                      },
-                    );
+                      viewModel.showEditDialog(
+                        context: context,
+                        title: 'Edit Description',
+                        initialContent: viewModel.meeting?.description ?? '',
+                        onSave: (newDescription) {
+                          viewModel.editDescription(newDescription);
+                        },
+                      );
                     },
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        '${viewModel.meeting?.description}',
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
                   ),
                 ],
               ),

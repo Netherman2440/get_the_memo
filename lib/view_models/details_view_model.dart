@@ -202,23 +202,46 @@ class DetailsViewModel extends ChangeNotifier {
         );
       case StepStatus.completed:
         return Card(
-          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: ExpansionTile(
-            title: Text('Transcript'),
-            children: [
-              ListTile(
-                subtitle: Text(transcript!),
-                onTap: () {
-                  showEditDialog(
-                    context: context,
-                    title: 'Edit Transcript',
-                    initialContent: transcript!,
-                    onSave: editTranscript,
-                  );
-                },
+          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+          color: Colors.transparent,
+          elevation: 0,
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+            ),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
+              title: Text(
+                'Transcript',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
               ),
-            ],
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    child: InkWell(
+                      onTap: () {
+                        showEditDialog(
+                          context: context,
+                          title: 'Edit Transcript',
+                          initialContent: transcript!,
+                          onSave: editTranscript,
+                        );
+                      },
+                      child: Text(
+                        transcript!,
+                        style: TextStyle(fontSize: 16),
+                        textAlign: TextAlign.left,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       case StepStatus.failed:
@@ -276,23 +299,42 @@ class DetailsViewModel extends ChangeNotifier {
         );
       case StepStatus.completed:
         return Card(
-          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: ExpansionTile(
-            title: Text('Summary'),
-            children: [
-              ListTile(
-                subtitle: Text(summary!),
-                onTap: () {
-                  showEditDialog(
-                    context: context,
-                    title: 'Edit Summary',
-                    initialContent: summary!,
-                    onSave: editSummary,
-                  );
-                },
+          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+          color: Colors.transparent,
+          elevation: 0,
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+            ),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
+              title: Text(
+                'Summary',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
               ),
-            ],
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: InkWell(
+                    onTap: () {
+                      showEditDialog(
+                        context: context,
+                        title: 'Edit Summary',
+                        initialContent: summary!,
+                        onSave: editSummary,
+                      );
+                    },
+                    child: Text(
+                      summary!,
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       case StepStatus.failed:
@@ -350,37 +392,49 @@ class DetailsViewModel extends ChangeNotifier {
         );
       case StepStatus.completed:
         return Card(
-          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: ExpansionTile(
-            title: Text('Action Points'),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _buildActionPointsList(tasks, context),
+          margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 2.0),
+          color: Colors.transparent,
+          elevation: 0,
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              dividerColor: Colors.transparent,
+            ),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
+              title: Text(
+                'Action Points',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
                 ),
               ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 16.0, bottom: 8.0),
-                  child: FloatingActionButton.small(
-                    onPressed: () {
-                      // Show dialog to add a new action point
-                      showEditDialog(
-                        context: context,
-                        title: 'Add New Action Point',
-                        initialContent: '',
-                        onSave: (newValue) => addActionPoint(newValue),
-                      );
-                    },
-                    child: const Icon(Icons.add),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _buildActionPointsList(tasks, context),
                   ),
                 ),
-              ),
-            ],
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16.0, bottom: 8.0),
+                    child: FloatingActionButton.small(
+                      onPressed: () {
+                        showEditDialog(
+                          context: context,
+                          title: 'Add New Action Point',
+                          initialContent: '',
+                          onSave: (newValue) => addActionPoint(newValue),
+                        );
+                      },
+                      child: const Icon(Icons.add),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       case StepStatus.failed:

@@ -17,6 +17,14 @@ class DetailsViewModel extends ChangeNotifier {
 
   final ProcessService processService;
 
+  // Add these to the class properties
+  bool isTranscriptEditing = false;
+  bool isSummaryEditing = false;
+
+  // Add these to store original values when editing starts
+  String? originalTranscript;
+  String? originalSummary;
+
   // Constructor that accepts meetingId
   DetailsViewModel({required this.processService, String? meetingId}) {
     if (meetingId != null) {
@@ -218,26 +226,67 @@ class DetailsViewModel extends ChangeNotifier {
                   color: Colors.grey[600],
                 ),
               ),
+              onExpansionChanged: (isExpanded) {
+                if (!isExpanded && isTranscriptEditing) {
+                  isTranscriptEditing = false;
+                  transcript = originalTranscript;
+                  notifyListeners();
+                }
+              },
               children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: InkWell(
-                      onTap: () {
-                        showEditDialog(
-                          context: context,
-                          title: 'Edit Transcript',
-                          initialContent: transcript!,
-                          onSave: editTranscript,
-                        );
-                      },
-                      child: Text(
-                        transcript!,
-                        style: TextStyle(fontSize: 16),
-                        textAlign: TextAlign.left,
-                      ),
-                    ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: GestureDetector(
+                    onTap: () {
+                      isTranscriptEditing = true;
+                      originalTranscript = transcript;
+                      notifyListeners();
+                    },
+                    child: isTranscriptEditing 
+                      ? Column(
+                          children: [
+                            TextField(
+                              controller: TextEditingController(text: transcript),
+                              maxLines: null,
+                              autofocus: true,
+                              style: TextStyle(fontSize: 12),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                hintText: 'Enter transcript here',
+                              ),
+                              onChanged: (value) {
+                                transcript = value;
+                              },
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    isTranscriptEditing = false;
+                                    transcript = originalTranscript;
+                                    notifyListeners();
+                                  },
+                                  child: Text('Cancel'),
+                                ),
+                                SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    isTranscriptEditing = false;
+                                    editTranscript(transcript!);
+                                    notifyListeners();
+                                  },
+                                  child: Text('Save'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Text(
+                          transcript ?? '',
+                          style: TextStyle(fontSize: 12),
+                        ),
                   ),
                 ),
               ],
@@ -315,22 +364,67 @@ class DetailsViewModel extends ChangeNotifier {
                   color: Colors.grey[600],
                 ),
               ),
+              onExpansionChanged: (isExpanded) {
+                if (!isExpanded && isSummaryEditing) {
+                  isSummaryEditing = false;
+                  summary = originalSummary;
+                  notifyListeners();
+                }
+              },
               children: [
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: InkWell(
+                  child: GestureDetector(
                     onTap: () {
-                      showEditDialog(
-                        context: context,
-                        title: 'Edit Summary',
-                        initialContent: summary!,
-                        onSave: editSummary,
-                      );
+                      isSummaryEditing = true;
+                      originalSummary = summary;
+                      notifyListeners();
                     },
-                    child: Text(
-                      summary!,
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    child: isSummaryEditing 
+                      ? Column(
+                          children: [
+                            TextField(
+                              controller: TextEditingController(text: summary),
+                              maxLines: null,
+                              autofocus: true,
+                              style: TextStyle(fontSize: 12),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                hintText: 'Enter summary here',
+                              ),
+                              onChanged: (value) {
+                                summary = value;
+                              },
+                            ),
+                            SizedBox(height: 8),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    isSummaryEditing = false;
+                                    summary = originalSummary;
+                                    notifyListeners();
+                                  },
+                                  child: Text('Cancel'),
+                                ),
+                                SizedBox(width: 8),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    isSummaryEditing = false;
+                                    editSummary(summary!);
+                                    notifyListeners();
+                                  },
+                                  child: Text('Save'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Text(
+                          summary ?? '',
+                          style: TextStyle(fontSize: 12),
+                        ),
                   ),
                 ),
               ],
@@ -464,7 +558,10 @@ class DetailsViewModel extends ChangeNotifier {
           margin: const EdgeInsets.only(bottom: 8.0),
           child: ListTile(
             //leading: const Text('•', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-            title: Text(line),
+            title: Text(
+              line,
+              style: TextStyle(fontSize: 12),
+            ),
             trailing: IconButton(
               icon: const Icon(Icons.close, color: Colors.red),
               onPressed: () {
@@ -506,7 +603,8 @@ class DetailsViewModel extends ChangeNotifier {
             title: Text(title),
             content: TextField(
               controller: controller,
-              maxLines: null, // Allows multiple lines
+              maxLines: null,
+              style: TextStyle(fontSize: 12),
               decoration: InputDecoration(
                 border: OutlineInputBorder(),
                 hintText: 'Enter text here',

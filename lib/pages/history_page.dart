@@ -23,6 +23,7 @@ class HistoryPage extends StatelessWidget {
 
             return ListView.builder(
               itemCount: viewModel.meetings.length,
+              
               itemBuilder: (context, index) {
                 final meeting = viewModel.meetings[index];
                 return HistoryItem(
@@ -30,6 +31,7 @@ class HistoryPage extends StatelessWidget {
                   date: meeting.createdAt,
                   duration: _formatDuration(meeting.duration),
                   meetingId: meeting.id,
+                  description: _formatDescription(meeting.description),
                 );
               },
             );
@@ -46,6 +48,13 @@ class HistoryPage extends StatelessWidget {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
     return '${twoDigits(minutes)}:${twoDigits(remainingSeconds)}';
   }
+
+  String _formatDescription(String description) {
+    if (description.isEmpty) return 'No description';
+    return description.length > 25 
+        ? '${description.substring(0, 25)}...' 
+        : description;
+  }
 }
 
 class HistoryItem extends StatelessWidget {
@@ -53,13 +62,18 @@ class HistoryItem extends StatelessWidget {
   final DateTime date;
   final String duration;
   final String meetingId;
+  final String description;
 
-  HistoryItem({
+  const HistoryItem({
+    Key? key,
     required this.title,
     required this.date,
     required this.duration,
     required this.meetingId,
-  });
+    required this.description,
+  }) : super(key: key);
+
+  String get formattedDate => _formatDateTime(date);
 
   String _formatDateTime(DateTime dateTime) {
     // Format date as HH:mm DD-MM-YYYY
@@ -72,67 +86,63 @@ class HistoryItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String text = '';
     final viewModel = context.watch<HistoryViewModel>();
     final bool isPlaying =
         viewModel.isPlaying && viewModel.currentPlayingId == meetingId;
     final meeting = viewModel.meetings.firstWhere((m) => m.id == meetingId);
 
-    if (meeting.description.isNotEmpty) {
-      int chars = meeting.description.length;
-      if (chars > 25) {
-        text = meeting.description.substring(0, 25) + '...';
-      } else {
-        text = meeting.description;
-      }
-    } else {
-      text = 'No description';
-    }
-
     return Card(
-      margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      margin: EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3),
+        ),
+      ),
       child: ListTile(
-        leading: Icon(Icons.mic, color: Theme.of(context).colorScheme.primary),
-        trailing: viewModel.getHistoryIcon(context, meetingId),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        contentPadding: EdgeInsets.all(12.0),
         title: Text(
           title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              text,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+        subtitle: Padding(
+          padding: EdgeInsets.only(top: 6.0),
+          child: Row(
+            children: [
+              Icon(Icons.calendar_today, 
+                size: 16, 
+                color: Colors.grey[600]
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              '${_formatDateTime(date)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurfaceVariant.withOpacity(0.8),
+              SizedBox(width: 8),
+              Text(
+                formattedDate,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
               ),
-            ),
-            Text(
-              duration,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(
-                  context,
-                ).colorScheme.onSurfaceVariant.withOpacity(0.8),
+              SizedBox(width: 16),
+              Icon(Icons.access_time, 
+                size: 16, 
+                color: Colors.grey[600]
               ),
-            ),
-          ],
+              SizedBox(width: 8),
+              Text(
+                duration,
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
         ),
-        onTap: () {
-          viewModel.showDetails(context, meetingId);
-        },
+        trailing: viewModel.getHistoryIcon(context, meetingId),
+        onTap: () => viewModel.showDetails(context, meetingId),
       ),
     );
   }

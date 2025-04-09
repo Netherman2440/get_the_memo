@@ -17,40 +17,61 @@ class RecordPage extends StatelessWidget {
 class _RecordPageContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    
     final viewModel = context.watch<RecordViewModel>();
-    
 
     return Scaffold(
-
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              viewModel.getRecordingStatusText(),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w500,
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                viewModel.getRecordingStatusText(),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () => viewModel.toggleRecording(),
-              style: ElevatedButton.styleFrom(
-                shape: CircleBorder(),
-                padding: EdgeInsets.all(30),
-                elevation: 8,
-                backgroundColor: viewModel.getButtonColor(context),
+            SizedBox(height: 40),
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
               ),
-              child: Icon(
-                viewModel.getRecordingIcon(),
-                size: 40,
-                color: Theme.of(context).colorScheme.onPrimary,
+              child: ElevatedButton(
+                onPressed: () => viewModel.toggleRecording(),
+                style: ElevatedButton.styleFrom(
+                  shape: CircleBorder(),
+                  padding: EdgeInsets.all(32),
+                  elevation: 4,
+                  backgroundColor: _getButtonColor(context, viewModel.state),
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                ),
+                child: Icon(
+                  viewModel.state == RecordingState.idle 
+                      ? Icons.mic
+                      : viewModel.state == RecordingState.recording 
+                          ? Icons.pause
+                          : Icons.play_arrow,
+                  size: 48,
+                  color: Colors.white,
+                ),
               ),
             ),
             if (viewModel.state == RecordingState.paused) ...[
-              SizedBox(height: 30),
+              SizedBox(height: 40),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -72,9 +93,9 @@ class _RecordPageContent extends StatelessWidget {
                     icon: Icon(Icons.save),
                     label: Text('Save Recording'),
                     style: FilledButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
@@ -84,11 +105,12 @@ class _RecordPageContent extends StatelessWidget {
                     icon: Icon(Icons.delete),
                     label: Text('Cancel'),
                     style: FilledButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      backgroundColor: Theme.of(context).colorScheme.error,
+                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                      foregroundColor: Theme.of(context).colorScheme.error,
                     ),
                   ),
                 ],
@@ -98,6 +120,17 @@ class _RecordPageContent extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Color _getButtonColor(BuildContext context, RecordingState state) {
+    switch (state) {
+      case RecordingState.recording:
+        return Theme.of(context).colorScheme.primary;
+      case RecordingState.paused:
+        return Theme.of(context).colorScheme.secondary;
+      case RecordingState.idle:
+        return Theme.of(context).colorScheme.primary;
+    }
   }
 }
 
@@ -117,81 +150,125 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
     final viewModel = context.read<RecordViewModel>();
     
     return AlertDialog(
-      title: Text('Processing Options'),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      title: Text(
+        'Processing Options',
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w500,
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CheckboxListTile(
-            title: Text('Transcribe'),
+          _buildOptionTile(
+            title: 'Transcribe',
             value: transcribe,
             onChanged: (bool? value) {
               setState(() {
                 transcribe = value ?? false;
-
-                if(!transcribe) {
+                if (!transcribe) {
                   summarize = false;
                   extractTasks = false;
                   autoTitle = false;
                 }
-                
               });
             },
           ),
-          if(transcribe) ...[
-          CheckboxListTile(
-            title: Text('Auto Title'),
-            value: autoTitle,
-            onChanged: (bool? value) {
-              setState(() {
-                autoTitle = value ?? false;
-              });
-            },
-          ),
-          CheckboxListTile(
-            title: Text('Summarize'),
-            value: summarize,
-            onChanged: (bool? value) {
-              setState(() {
-                summarize = value ?? false;
-              });
-            },
-          ),
-          CheckboxListTile(
-            title: Text('Extract Tasks'),
-            value: extractTasks,
-            onChanged: (bool? value) {
-              setState(() {
-                extractTasks = value ?? false;
-              });
-            },
-          ),
+          if (transcribe) ...[
+            _buildOptionTile(
+              title: 'Auto Title',
+              value: autoTitle,
+              onChanged: (bool? value) {
+                setState(() {
+                  autoTitle = value ?? false;
+                });
+              },
+            ),
+            _buildOptionTile(
+              title: 'Summarize',
+              value: summarize,
+              onChanged: (bool? value) {
+                setState(() {
+                  summarize = value ?? false;
+                });
+              },
+            ),
+            _buildOptionTile(
+              title: 'Extract Tasks',
+              value: extractTasks,
+              onChanged: (bool? value) {
+                setState(() {
+                  extractTasks = value ?? false;
+                });
+              },
+            ),
           ],
         ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text('Cancel'),
+          child: Text(
+            'Cancel',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondary,
+            ),
+          ),
         ),
         FilledButton(
           onPressed: () {
-            // Convert selected options to ProcessType list
             final List<ProcessType> selectedOptions = [];
             if (transcribe) selectedOptions.add(ProcessType.transcription);
             if (summarize) selectedOptions.add(ProcessType.summarize);
             if (extractTasks) selectedOptions.add(ProcessType.actionPoints);
             if (autoTitle) selectedOptions.add(ProcessType.autoTitle);
-            // Process the meeting with selected options
+            
             viewModel.processMeeting(
               context,
-              viewModel.currentMeeting!, 
+              viewModel.currentMeeting!,
               selectedOptions
             );
             Navigator.pop(context);
           },
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
           child: Text('Process'),
         ),
       ],
+    );
+  }
+
+  Widget _buildOptionTile({
+    required String title,
+    required bool value,
+    required Function(bool?) onChanged,
+  }) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+      ),
+      child: CheckboxListTile(
+        title: Text(
+          title,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+        ),
+        value: value,
+        onChanged: onChanged,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      ),
     );
   }
 }

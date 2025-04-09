@@ -13,9 +13,7 @@ class HistoryPage extends StatelessWidget {
       child: Scaffold(
         body: Consumer<HistoryViewModel>(
           builder: (context, viewModel, child) {
-            if (viewModel.isLoading) {
-              return Center(child: CircularProgressIndicator());
-            }
+           
 
             if (viewModel.error != null) {
               return Center(child: Text(viewModel.error!));

@@ -123,10 +123,12 @@ class HistoryViewModel extends ChangeNotifier {
 
   Widget getHistoryIcon(BuildContext context, String meetingId) {
     if (isProcessing(meetingId)) {
-      return CircularProgressIndicator(
-        strokeWidth: 2,
-        valueColor: AlwaysStoppedAnimation<Color>(
-          Theme.of(context).colorScheme.onPrimary,
+      return SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          color: Colors.white,
         ),
       );
     } else {

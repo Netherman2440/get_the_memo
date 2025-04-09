@@ -3,6 +3,7 @@ import 'package:get_the_memo/services/api_key_service.dart';
 import 'package:get_the_memo/services/openai_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:get_the_memo/theme/text_styles.dart';
 
 class SettingsPage extends StatefulWidget {
   @override
@@ -60,7 +61,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
                       Text(
                         'OPENAI API Key',
-                        style: TextStyle(
+                        style: AppTextStyles.contentStyle.copyWith(
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
@@ -134,8 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 title: Text(
                   'Security Notice',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppTextStyles.contentStyle.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.error,
                   ),
@@ -148,8 +148,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: Text(
                         'Your API key is stored only on your device and is never sent to our servers. '
                         'The app communicates directly with OpenAI servers using your key.',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTextStyles.labelStyle.copyWith(
                           color: Theme.of(context).colorScheme.error,
                         ),
                       ),
@@ -174,7 +173,7 @@ class _SettingsPageState extends State<SettingsPage> {
             child: ListTile(
               title: Text(
                 'OpenAI Model',
-                style: TextStyle(
+                style: AppTextStyles.contentStyle.copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
                 ),
@@ -221,10 +220,9 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: AppTextStyles.labelStyle.copyWith(
           color: Theme.of(context).colorScheme.primary,
           decoration: TextDecoration.underline,
-          fontSize: 12,
         ),
       ),
     );

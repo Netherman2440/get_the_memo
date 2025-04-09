@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_the_memo/services/process_service.dart';
 import 'package:provider/provider.dart';
 import 'package:get_the_memo/view_models/record_viewmodel.dart';
+import 'package:get_the_memo/theme/text_styles.dart';
 
 class RecordPage extends StatelessWidget {
   @override
@@ -32,7 +33,7 @@ class _RecordPageContent extends StatelessWidget {
               ),
               child: Text(
                 viewModel.getRecordingStatusText(),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                style: AppTextStyles.titleStyle.copyWith(
                   color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w500,
                 ),
@@ -165,7 +166,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
       ),
       title: Text(
         'Processing Options',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        style: AppTextStyles.titleStyle.copyWith(
           fontWeight: FontWeight.w500,
           color: Theme.of(context).colorScheme.onSurface,
         ),
@@ -268,7 +269,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
       child: CheckboxListTile(
         title: Text(
           title,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          style: AppTextStyles.contentStyle.copyWith(
             color: Theme.of(context).colorScheme.onSurface,
           ),
         ),

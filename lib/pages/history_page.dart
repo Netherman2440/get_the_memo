@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_the_memo/services/process_service.dart';
 import 'package:provider/provider.dart';
 import 'package:get_the_memo/view_models/history_view_model.dart';
+import 'package:get_the_memo/theme/text_styles.dart';
 
 class HistoryPage extends StatelessWidget {
   @override
@@ -102,7 +103,7 @@ class HistoryItem extends StatelessWidget {
         contentPadding: EdgeInsets.all(12.0),
         title: Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: AppTextStyles.contentStyle.copyWith(
             fontWeight: FontWeight.w500,
             color: Theme.of(context).colorScheme.onSurface,
           ),
@@ -118,9 +119,8 @@ class HistoryItem extends StatelessWidget {
               SizedBox(width: 8),
               Text(
                 formattedDate,
-                style: TextStyle(
+                style: AppTextStyles.labelStyle.copyWith(
                   color: Colors.grey[600],
-                  fontSize: 14,
                 ),
               ),
               SizedBox(width: 16),
@@ -131,9 +131,8 @@ class HistoryItem extends StatelessWidget {
               SizedBox(width: 8),
               Text(
                 duration,
-                style: TextStyle(
+                style: AppTextStyles.labelStyle.copyWith(
                   color: Colors.grey[600],
-                  fontSize: 14,
                 ),
               ),
             ],

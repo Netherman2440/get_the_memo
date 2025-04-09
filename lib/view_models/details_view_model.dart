@@ -276,6 +276,11 @@ class DetailsViewModel extends ChangeNotifier {
   }
 
   Widget getTranscriptionSection(BuildContext context) {
+    // If we have transcript but no status, treat as completed
+    if (transcript != null && transcriptionStatus == StepStatus.none) {
+      transcriptionStatus = StepStatus.completed;
+    }
+
     switch (transcriptionStatus) {
       case StepStatus.none:
         return ElevatedButton(
@@ -436,9 +441,12 @@ class DetailsViewModel extends ChangeNotifier {
   }
 
   getSummarySection(BuildContext context) {
-    if (transcript == null || transcript!.isEmpty) {
-      return const SizedBox.shrink();
+    // If we have summary but no status, treat as completed
+    if (summary != null && summaryStatus == StepStatus.none) {
+      summaryStatus = StepStatus.completed;
     }
+
+
     switch (summaryStatus) {
       case StepStatus.none:
         return ElevatedButton(
@@ -599,9 +607,11 @@ class DetailsViewModel extends ChangeNotifier {
   }
 
   Widget getActionPointsSection(BuildContext context) {
-    if (transcript == null || transcript!.isEmpty) {
-      return const SizedBox.shrink();
+    // If we have tasks but no status, treat as completed
+    if (tasks.isNotEmpty && tasksStatus == StepStatus.none) {
+      tasksStatus = StepStatus.completed;
     }
+
     switch (tasksStatus) {
       case StepStatus.none:
         return ElevatedButton(

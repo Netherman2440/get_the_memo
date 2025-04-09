@@ -31,6 +31,10 @@ class DetailsViewModel extends ChangeNotifier {
   String? originalTitle;
   String? originalDescription;
 
+  // Add these properties to track action point editing
+  int? editingActionPointIndex;
+  String? originalActionPoint;
+
   // Constructor that accepts meetingId
   DetailsViewModel({required this.processService, String? meetingId}) {
     if (meetingId != null) {
@@ -193,6 +197,9 @@ class DetailsViewModel extends ChangeNotifier {
       isSummaryEditing = false;
       summary = originalSummary;
     }
+    if (editingActionPointIndex != null) {
+      cancelActionPointEditing();
+    }
     notifyListeners();
   }
 
@@ -230,12 +237,46 @@ class DetailsViewModel extends ChangeNotifier {
     cancelAllEditing();
   }
 
+  Future<void> regenerateTranscript(BuildContext context) async {
+    isTranscriptEditing = false;
+    transcript = null;
+    notifyListeners();
+    await createTranscript(context, meeting!.id);
+  }
+
+  Future<void> regenerateSummary(BuildContext context) async {
+    isSummaryEditing = false;
+    summary = null;
+    notifyListeners();
+    await createSummary(context, meeting!.id);
+  }
+
+  Future<void> regenerateActionPoints(BuildContext context) async {
+    tasks = [];
+    notifyListeners();
+    await createTasks(context, meeting!.id);
+  }
+
+  Future<void> regenerateTitle(BuildContext context) async {
+    isTitleEditing = false;
+    meeting?.title = '';
+    notifyListeners();
+    await processService.process_Meeting(context, meeting!, [
+      ProcessType.autoTitle,
+    ]);
+  }
+
+  Future<void> regenerateDescription(BuildContext context) async {
+    isDescriptionEditing = false;
+    meeting?.description = '';
+    notifyListeners();
+    await processService.process_Meeting(context, meeting!, [
+      ProcessType.autoTitle,
+    ]);
+  }
+
   Widget getTranscriptionSection(BuildContext context) {
-    var _transcriptionStatus = transcriptionStatus;
-    if (transcript != null && transcript!.isNotEmpty) {
-      _transcriptionStatus = StepStatus.completed;
-    }
-    switch (_transcriptionStatus) {
+    switch (transcriptionStatus) {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
@@ -275,73 +316,109 @@ class DetailsViewModel extends ChangeNotifier {
           color: Colors.transparent,
           elevation: 0,
           child: Theme(
-            data: Theme.of(context).copyWith(
-              dividerColor: Colors.transparent,
-            ),
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
-              title: Text(
-                'Transcript',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+              title: Row(
+                children: [
+                  Text(
+                    'Transcript',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  if (transcriptionStatus == StepStatus.inProgress)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               onExpansionChanged: (isExpanded) {
                 handleSectionExpansion('transcript');
               },
               children: [
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
                   child: GestureDetector(
                     onTap: () {
                       startTranscriptEditing();
                     },
-                    child: isTranscriptEditing 
-                      ? Column(
-                          children: [
-                            TextField(
-                              controller: TextEditingController(text: transcript),
-                              maxLines: null,
-                              autofocus: true,
-                              style: TextStyle(fontSize: 12),
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: 'Enter transcript here',
-                              ),
-                              onChanged: (value) {
-                                transcript = value;
-                              },
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                    child:
+                        isTranscriptEditing
+                            ? Column(
                               children: [
-                                TextButton(
-                                  onPressed: () {
-                                    isTranscriptEditing = false;
-                                    transcript = originalTranscript;
-                                    notifyListeners();
+                                TextField(
+                                  controller: TextEditingController(
+                                    text: transcript,
+                                  ),
+                                  maxLines: null,
+                                  autofocus: true,
+                                  style: TextStyle(fontSize: 12),
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: 'Enter transcript here',
+                                  ),
+                                  onChanged: (value) {
+                                    transcript = value;
                                   },
-                                  child: Text('Cancel'),
                                 ),
-                                SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    isTranscriptEditing = false;
-                                    editTranscript(transcript!);
-                                    notifyListeners();
-                                  },
-                                  child: Text('Save'),
+                                SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    TextButton.icon(
+                                      onPressed:
+                                          () => regenerateTranscript(context),
+                                      icon: Icon(Icons.refresh),
+                                      label: Text('Regenerate'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {
+                                            isTranscriptEditing = false;
+                                            transcript = originalTranscript;
+                                            notifyListeners();
+                                          },
+                                          child: Text('Cancel'),
+                                        ),
+                                        SizedBox(width: 8),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            isTranscriptEditing = false;
+                                            editTranscript(transcript!);
+                                            notifyListeners();
+                                          },
+                                          child: Text('Save'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ],
+                            )
+                            : Text(
+                              transcript ?? '',
+                              style: TextStyle(fontSize: 12),
                             ),
-                          ],
-                        )
-                      : Text(
-                          transcript ?? '',
-                          style: TextStyle(fontSize: 12),
-                        ),
                   ),
                 ),
               ],
@@ -362,12 +439,7 @@ class DetailsViewModel extends ChangeNotifier {
     if (transcript == null || transcript!.isEmpty) {
       return const SizedBox.shrink();
     }
-    var _summaryStatus = summaryStatus;
-    if (summary != null && summary!.isNotEmpty) {
-      _summaryStatus = StepStatus.completed;
-    }
-
-    switch (_summaryStatus) {
+    switch (summaryStatus) {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
@@ -407,73 +479,109 @@ class DetailsViewModel extends ChangeNotifier {
           color: Colors.transparent,
           elevation: 0,
           child: Theme(
-            data: Theme.of(context).copyWith(
-              dividerColor: Colors.transparent,
-            ),
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
-              title: Text(
-                'Summary',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+              title: Row(
+                children: [
+                  Text(
+                    'Summary',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  if (summaryStatus == StepStatus.inProgress)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               onExpansionChanged: (isExpanded) {
                 handleSectionExpansion('summary');
               },
               children: [
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
                   child: GestureDetector(
                     onTap: () {
                       startSummaryEditing();
                     },
-                    child: isSummaryEditing 
-                      ? Column(
-                          children: [
-                            TextField(
-                              controller: TextEditingController(text: summary),
-                              maxLines: null,
-                              autofocus: true,
-                              style: TextStyle(fontSize: 12),
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: 'Enter summary here',
-                              ),
-                              onChanged: (value) {
-                                summary = value;
-                              },
-                            ),
-                            SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
+                    child:
+                        isSummaryEditing
+                            ? Column(
                               children: [
-                                TextButton(
-                                  onPressed: () {
-                                    isSummaryEditing = false;
-                                    summary = originalSummary;
-                                    notifyListeners();
+                                TextField(
+                                  controller: TextEditingController(
+                                    text: summary,
+                                  ),
+                                  maxLines: null,
+                                  autofocus: true,
+                                  style: TextStyle(fontSize: 12),
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: 'Enter summary here',
+                                  ),
+                                  onChanged: (value) {
+                                    summary = value;
                                   },
-                                  child: Text('Cancel'),
                                 ),
-                                SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed: () {
-                                    isSummaryEditing = false;
-                                    editSummary(summary!);
-                                    notifyListeners();
-                                  },
-                                  child: Text('Save'),
+                                SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    TextButton.icon(
+                                      onPressed:
+                                          () => regenerateSummary(context),
+                                      icon: Icon(Icons.refresh),
+                                      label: Text('Regenerate'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {
+                                            isSummaryEditing = false;
+                                            summary = originalSummary;
+                                            notifyListeners();
+                                          },
+                                          child: Text('Cancel'),
+                                        ),
+                                        SizedBox(width: 8),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            isSummaryEditing = false;
+                                            editSummary(summary!);
+                                            notifyListeners();
+                                          },
+                                          child: Text('Save'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               ],
+                            )
+                            : Text(
+                              summary ?? '',
+                              style: TextStyle(fontSize: 12),
                             ),
-                          ],
-                        )
-                      : Text(
-                          summary ?? '',
-                          style: TextStyle(fontSize: 12),
-                        ),
                   ),
                 ),
               ],
@@ -494,12 +602,7 @@ class DetailsViewModel extends ChangeNotifier {
     if (transcript == null || transcript!.isEmpty) {
       return const SizedBox.shrink();
     }
-    var _tasksStatus = tasksStatus;
-    if (!tasks.isEmpty) {
-      _tasksStatus = StepStatus.completed;
-    }
-
-    switch (_tasksStatus) {
+    switch (tasksStatus) {
       case StepStatus.none:
         return ElevatedButton(
           onPressed: () {
@@ -539,41 +642,71 @@ class DetailsViewModel extends ChangeNotifier {
           color: Colors.transparent,
           elevation: 0,
           child: Theme(
-            data: Theme.of(context).copyWith(
-              dividerColor: Colors.transparent,
-            ),
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0),
-              title: Text(
-                'Action Points',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+              title: Row(
+                children: [
+                  Text(
+                    'Action Points',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  if (tasksStatus == StepStatus.inProgress)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: SizedBox(
+                        width: 12,
+                        height: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _buildActionPointsList(tasks, context),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 16.0, bottom: 8.0),
-                    child: FloatingActionButton.small(
-                      onPressed: () {
-                        showEditDialog(
-                          context: context,
-                          title: 'Add New Action Point',
-                          initialContent: '',
-                          onSave: (newValue) => addActionPoint(newValue),
-                        );
-                      },
-                      child: const Icon(Icons.add),
-                    ),
+                    children: [
+                      // First show the list of action points
+                      ..._buildActionPointsList(tasks, context),
+                      // Then show the buttons below
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => regenerateActionPoints(context),
+                            icon: Icon(Icons.refresh),
+                            label: Text('Regenerate'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          TextButton.icon(
+                            onPressed: () {
+                              showEditDialog(
+                                context: context,
+                                title: 'Add New Action Point',
+                                initialContent: '',
+                                onSave: (newValue) => addActionPoint(newValue),
+                              );
+                            },
+                            icon: Icon(Icons.add),
+                            label: Text('Add'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -595,37 +728,69 @@ class DetailsViewModel extends ChangeNotifier {
     List<String> actionPointsText,
     BuildContext context,
   ) {
-    // Split the text by new lines
     List<Widget> widgets = [];
 
     for (var i = 0; i < actionPointsText.length; i++) {
       final line = actionPointsText[i];
-      final index = i; // Capture the index for use in callbacks
+      final index = i;
+      final isEditing = editingActionPointIndex == index;
 
       widgets.add(
         Card(
           margin: const EdgeInsets.only(bottom: 8.0),
           child: ListTile(
-            //leading: const Text('•', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-            title: Text(
-              line,
-              style: TextStyle(fontSize: 12),
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.close, color: Colors.red),
-              onPressed: () {
-                deleteActionPoint(line);
+            title: GestureDetector(
+              onTap: () {
+                startActionPointEditing(index);
               },
+              child: isEditing
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          controller: TextEditingController(text: line),
+                          maxLines: null,
+                          autofocus: true,
+                          style: TextStyle(fontSize: 12),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(),
+                            hintText: 'Enter action point here',
+                          ),
+                          onChanged: (value) {
+                            tasks[index] = value;
+                          },
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () {
+                                cancelActionPointEditing();
+                              },
+                              child: Text('Cancel'),
+                            ),
+                            SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                saveActionPointEdit();
+                              },
+                              child: Text('Save'),
+                            ),
+                          ],
+                        ),
+                      ],
+                    )
+                  : Text(line, style: TextStyle(fontSize: 12)),
             ),
-            onTap: () {
-              // Call the edit dialog with the current action point
-              showEditDialog(
-                context: context,
-                title: 'Edit Action Point',
-                initialContent: line,
-                onSave: (newValue) => editActionPoint(index, newValue),
-              );
-            },
+            trailing: isEditing
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red),
+                    onPressed: () {
+                      deleteActionPoint(line);
+                    },
+                  ),
           ),
         ),
       );
@@ -721,6 +886,32 @@ ${transcript ?? "No transcript available"}
 
   void _onProcessServiceChanged() {
     loadMeeting(meeting!.id);
+  }
+
+  // Add these methods to handle action point editing
+  void startActionPointEditing(int index) {
+    cancelAllEditing(); // Cancel any other editing in progress
+    editingActionPointIndex = index;
+    originalActionPoint = tasks[index];
+    notifyListeners();
+  }
+
+  void cancelActionPointEditing() {
+    if (editingActionPointIndex != null && originalActionPoint != null) {
+      tasks[editingActionPointIndex!] = originalActionPoint!;
+    }
+    editingActionPointIndex = null;
+    originalActionPoint = null;
+    notifyListeners();
+  }
+
+  Future<void> saveActionPointEdit() async {
+    if (editingActionPointIndex != null) {
+      await editTasks(tasks);
+      editingActionPointIndex = null;
+      originalActionPoint = null;
+      notifyListeners();
+    }
   }
 }
 

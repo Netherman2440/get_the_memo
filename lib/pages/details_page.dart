@@ -68,23 +68,35 @@ class DetailsPageContent extends StatelessWidget {
                               ),
                               SizedBox(height: 8),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  TextButton(
-                                    onPressed: () {
-                                      viewModel.isTitleEditing = false;
-                                      viewModel.meeting?.title = viewModel.originalTitle ?? '';
-                                      viewModel.notifyListeners();
-                                    },
-                                    child: Text('Cancel'),
+                                  TextButton.icon(
+                                    onPressed: () => viewModel.regenerateTitle(context),
+                                    icon: Icon(Icons.refresh),
+                                    label: Text('Regenerate'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Theme.of(context).colorScheme.primary,
+                                    ),
                                   ),
-                                  SizedBox(width: 8),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      viewModel.isTitleEditing = false;
-                                      viewModel.editTitle(viewModel.meeting?.title ?? '');
-                                    },
-                                    child: Text('Save'),
+                                  Row(
+                                    children: [
+                                      TextButton(
+                                        onPressed: () {
+                                          viewModel.isTitleEditing = false;
+                                          viewModel.meeting?.title = viewModel.originalTitle ?? '';
+                                          viewModel.notifyListeners();
+                                        },
+                                        child: Text('Cancel'),
+                                      ),
+                                      SizedBox(width: 8),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          viewModel.isTitleEditing = false;
+                                          viewModel.editTitle(viewModel.meeting?.title ?? '');
+                                        },
+                                        child: Text('Save'),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -138,23 +150,35 @@ class DetailsPageContent extends StatelessWidget {
                               ),
                               SizedBox(height: 8),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  TextButton(
-                                    onPressed: () {
-                                      viewModel.isDescriptionEditing = false;
-                                      viewModel.meeting?.description = viewModel.originalDescription ?? '';
-                                      viewModel.notifyListeners();
-                                    },
-                                    child: Text('Cancel'),
+                                  TextButton.icon(
+                                    onPressed: () => viewModel.regenerateDescription(context),
+                                    icon: Icon(Icons.refresh),
+                                    label: Text('Regenerate'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Theme.of(context).colorScheme.primary,
+                                    ),
                                   ),
-                                  SizedBox(width: 8),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      viewModel.isDescriptionEditing = false;
-                                      viewModel.editDescription(viewModel.meeting?.description ?? '');
-                                    },
-                                    child: Text('Save'),
+                                  Row(
+                                    children: [
+                                      TextButton(
+                                        onPressed: () {
+                                          viewModel.isDescriptionEditing = false;
+                                          viewModel.meeting?.description = viewModel.originalDescription ?? '';
+                                          viewModel.notifyListeners();
+                                        },
+                                        child: Text('Cancel'),
+                                      ),
+                                      SizedBox(width: 8),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          viewModel.isDescriptionEditing = false;
+                                          viewModel.editDescription(viewModel.meeting?.description ?? '');
+                                        },
+                                        child: Text('Save'),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),

@@ -37,7 +37,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider<ProcessService>(
       create: (_) => processService,
       child: MaterialApp(
-        title: 'Get the Memo',
+        title: 'Meet Note',
         themeMode: ThemeMode.dark,
         theme: ThemeData(
           useMaterial3: true,

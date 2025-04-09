@@ -43,7 +43,7 @@ class NotificationService {
 
     // Android initialization settings
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('notification_icon');
 
     // iOS initialization settings
     const DarwinInitializationSettings initializationSettingsDarwin =
@@ -128,6 +128,8 @@ class NotificationService {
           enableVibration: sound,
           enableLights: sound,
           showWhen: false,
+          icon: 'notification_icon',
+          largeIcon: DrawableResourceAndroidBitmap('notification_icon'),
         );
 
     final DarwinNotificationDetails iosNotificationDetails =

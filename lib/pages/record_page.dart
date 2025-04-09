@@ -75,42 +75,52 @@ class _RecordPageContent extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FilledButton.icon(
-                    onPressed: () async {
-                      await viewModel.saveRecording();
-                      if (context.mounted) {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return ChangeNotifierProvider.value(
-                              value: viewModel,
-                              child: ProcessOptionsDialog(),
-                            );
-                          },
-                        );
-                      }
-                    },
-                    icon: Icon(Icons.save),
-                    label: Text('Save Recording'),
-                    style: FilledButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  SizedBox(
+                    width: 100,
+                    child: FilledButton(
+                      onPressed: () async {
+                        await viewModel.saveRecording();
+                        if (context.mounted) {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ChangeNotifierProvider.value(
+                                value: viewModel,
+                                child: ProcessOptionsDialog(),
+                              );
+                            },
+                          );
+                        }
+                      },
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      child: Text(
+                        'Save',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
                   ),
                   SizedBox(width: 16),
-                  FilledButton.icon(
-                    onPressed: () => viewModel.cancelRecording(),
-                    icon: Icon(Icons.delete),
-                    label: Text('Cancel'),
-                    style: FilledButton.styleFrom(
-                      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  SizedBox(
+                    width: 100,
+                    child: OutlinedButton(
+                      onPressed: () => viewModel.cancelRecording(),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
-                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                      foregroundColor: Theme.of(context).colorScheme.error,
+                      child: Text(
+                        'Cancel',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -272,3 +282,4 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
     );
   }
 }
+

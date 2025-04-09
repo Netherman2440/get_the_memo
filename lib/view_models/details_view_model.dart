@@ -175,6 +175,61 @@ class DetailsViewModel extends ChangeNotifier {
     return status;
   }
 
+  // Add new method to cancel all edits
+  void cancelAllEditing() {
+    if (isTitleEditing) {
+      isTitleEditing = false;
+      meeting?.title = originalTitle ?? '';
+    }
+    if (isDescriptionEditing) {
+      isDescriptionEditing = false;
+      meeting?.description = originalDescription ?? '';
+    }
+    if (isTranscriptEditing) {
+      isTranscriptEditing = false;
+      transcript = originalTranscript;
+    }
+    if (isSummaryEditing) {
+      isSummaryEditing = false;
+      summary = originalSummary;
+    }
+    notifyListeners();
+  }
+
+  // Update all start editing methods
+  void startTitleEditing() {
+    cancelAllEditing();
+    isTitleEditing = true;
+    originalTitle = meeting?.title;
+    notifyListeners();
+  }
+
+  void startDescriptionEditing() {
+    cancelAllEditing();
+    isDescriptionEditing = true;
+    originalDescription = meeting?.description;
+    notifyListeners();
+  }
+
+  void startTranscriptEditing() {
+    cancelAllEditing();
+    isTranscriptEditing = true;
+    originalTranscript = transcript;
+    notifyListeners();
+  }
+
+  void startSummaryEditing() {
+    cancelAllEditing();
+    isSummaryEditing = true;
+    originalSummary = summary;
+    notifyListeners();
+  }
+
+  // Update the expansion handler
+  void handleSectionExpansion(String section) {
+    cancelAllEditing();
+  }
+
   Widget getTranscriptionSection(BuildContext context) {
     var _transcriptionStatus = transcriptionStatus;
     if (transcript != null && transcript!.isNotEmpty) {
@@ -233,20 +288,14 @@ class DetailsViewModel extends ChangeNotifier {
                 ),
               ),
               onExpansionChanged: (isExpanded) {
-                if (!isExpanded && isTranscriptEditing) {
-                  isTranscriptEditing = false;
-                  transcript = originalTranscript;
-                  notifyListeners();
-                }
+                handleSectionExpansion('transcript');
               },
               children: [
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: GestureDetector(
                     onTap: () {
-                      isTranscriptEditing = true;
-                      originalTranscript = transcript;
-                      notifyListeners();
+                      startTranscriptEditing();
                     },
                     child: isTranscriptEditing 
                       ? Column(
@@ -371,20 +420,14 @@ class DetailsViewModel extends ChangeNotifier {
                 ),
               ),
               onExpansionChanged: (isExpanded) {
-                if (!isExpanded && isSummaryEditing) {
-                  isSummaryEditing = false;
-                  summary = originalSummary;
-                  notifyListeners();
-                }
+                handleSectionExpansion('summary');
               },
               children: [
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: GestureDetector(
                     onTap: () {
-                      isSummaryEditing = true;
-                      originalSummary = summary;
-                      notifyListeners();
+                      startSummaryEditing();
                     },
                     child: isSummaryEditing 
                       ? Column(

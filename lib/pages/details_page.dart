@@ -48,9 +48,7 @@ class DetailsPageContent extends StatelessWidget {
                     ),
                     GestureDetector(
                       onTap: () {
-                        viewModel.isTitleEditing = true;
-                        viewModel.originalTitle = viewModel.meeting?.title;
-                        viewModel.notifyListeners();
+                        viewModel.startTitleEditing();
                       },
                       child: viewModel.isTitleEditing 
                         ? Column(
@@ -120,9 +118,7 @@ class DetailsPageContent extends StatelessWidget {
                     ),
                     GestureDetector(
                       onTap: () {
-                        viewModel.isDescriptionEditing = true;
-                        viewModel.originalDescription = viewModel.meeting?.description;
-                        viewModel.notifyListeners();
+                        viewModel.startDescriptionEditing();
                       },
                       child: viewModel.isDescriptionEditing 
                         ? Column(

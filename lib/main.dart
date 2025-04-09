@@ -21,10 +21,10 @@ void main() async {
   final processService = ProcessService();
 
   // Initialize notifications
-  await NotificationService.initialize();
-  await NotificationService.requestPermissions();
+  NotificationService.initialize();
+  NotificationService.requestPermissions();
   
-  await DatabaseService.init();
+  DatabaseService.init();
   runApp(MyApp(processService: processService));
 }
 

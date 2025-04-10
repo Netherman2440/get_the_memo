@@ -27,7 +27,7 @@ class ProcessService extends ChangeNotifier {
     List<ProcessType> request,
   ) async {
     try {
-      showSnackBar(context, 'Starting new process...', MessageType.success);
+      showSnackBar(context, 'Rozpoczynanie nowego procesu...', MessageType.success);
 
       Process? process = getProcess(meeting.id, request);
       //check if there is a process for this meeting
@@ -40,11 +40,11 @@ class ProcessService extends ChangeNotifier {
           )) {
             showSnackBar(
               context,
-              'Process already contains steps that are in the request',
+              'Proces już zawiera kroki, które są w żądaniu',
               MessageType.error,
             );
             throw Exception(
-              'Process already contains steps that are in the request',
+              'Proces już zawiera kroki, które są w żądaniu',
             );
           }
         }
@@ -113,8 +113,8 @@ class ProcessService extends ChangeNotifier {
       }
 
       if (transcript == null) {
-        showSnackBar(context, 'Transcription failed', MessageType.error);
-        throw Exception('Transcription failed');
+        showSnackBar(context, 'Transkrypcja nie powiodła się', MessageType.error);
+        throw Exception('Transkrypcja nie powiodła się');
       }
 
       //process steps
@@ -142,14 +142,14 @@ class ProcessService extends ChangeNotifier {
       if (!(e is InvalidAPIKeyException || e is InsufficientFundsException)) {
         NotificationService.showNotification(
           id: meeting.id.hashCode,
-          title: 'Processing Error',
-          body: 'Failed to process meeting: ${e.toString()}',
+          title: 'Błąd przetwarzania',
+          body: 'Nie udało się przetworzyć spotkania: ${e.toString()}',
         );
       }
-      print('Error processing meeting: $e');
+      print('Błąd przetwarzania spotkania: $e');
 
-      showSnackBar(context, 'Error processing meeting: $e', MessageType.error);
-      throw Exception('Error processing meeting: $e');
+      showSnackBar(context, 'Błąd przetwarzania spotkania: $e', MessageType.error);
+      throw Exception('Błąd przetwarzania spotkania: $e');
     }
   }
 
@@ -229,7 +229,7 @@ class ProcessService extends ChangeNotifier {
 
   // Add this method to update notification for a process
   void _updateProcessNotification(Process process) {
-    print('Updating notification for process: ${process.meetingId}');
+    print('Aktualizacja powiadomienia dla procesu: ${process.meetingId}');
 
     final hasErrors = process.steps.any((s) => s.status == StepStatus.failed);
     final allCompleted = process.steps.every(
@@ -238,13 +238,13 @@ class ProcessService extends ChangeNotifier {
     print('hasErrors: $hasErrors');
     print('allCompleted: $allCompleted');
 
-    String title = 'Meeting Processing Status';
+    String title = 'Status przetwarzania spotkania';
     String body;
 
     if (allCompleted) {
-      body = 'All steps completed! Check the results.';
+      body = 'Wszystkie kroki zakończone! Sprawdź wyniki.';
     } else if (hasErrors) {
-      body = 'Processing failed. Please try again.';
+      body = 'Przetwarzanie nie powiodło się. Spróbuj ponownie.';
     } else {
       // Find first in-progress step
       var inProgressStep = process.steps.firstWhere(
@@ -258,16 +258,16 @@ class ProcessService extends ChangeNotifier {
 
       // Format process type name
       String stepName = switch (inProgressStep.type) {
-        ProcessType.transcription => 'Transcription',
-        ProcessType.summarize => 'Summary',
-        ProcessType.actionPoints => 'Action Points',
-        ProcessType.autoTitle => 'Auto Title',
-        ProcessType.send => 'Send',
-        ProcessType.none => 'Processing',
+        ProcessType.transcription => 'Transkrypcja',
+        ProcessType.summarize => 'Podsumowanie',
+        ProcessType.actionPoints => 'Punkty akcji',
+        ProcessType.autoTitle => 'Automatyczny tytuł',
+        ProcessType.send => 'Wysyłanie',
+        ProcessType.none => 'Przetwarzanie',
       };
 
       body =
-          '$stepName in progress... ($completedCount/${process.steps.length})';
+          '$stepName w toku... ($completedCount/${process.steps.length})';
     }
 
     print('Showing notification - Title: $title, Body: $body');

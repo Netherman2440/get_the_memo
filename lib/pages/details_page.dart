@@ -23,7 +23,7 @@ class DetailsPageContent extends StatelessWidget {
     final viewModel = context.watch<DetailsViewModel>();
 
     return Scaffold(
-      appBar: AppBar(title: Text('Details')),
+      appBar: AppBar(title: Text('Szczegóły')),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -39,7 +39,7 @@ class DetailsPageContent extends StatelessWidget {
                   children: [
                     Center(
                       child: Text(
-                        'Title',
+                        'Tytuł',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -60,7 +60,7 @@ class DetailsPageContent extends StatelessWidget {
                                 style: TextStyle(fontSize: 24),
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: 'Enter title here',
+                                  hintText: 'Wprowadź tytuł',
                                 ),
                                 onChanged: (value) {
                                   viewModel.meeting?.title = value;
@@ -73,7 +73,7 @@ class DetailsPageContent extends StatelessWidget {
                                   TextButton.icon(
                                     onPressed: () => viewModel.regenerateTitle(context),
                                     icon: Icon(Icons.refresh),
-                                    label: Text('Regenerate'),
+                                    label: Text('Wygeneruj ponownie'),
                                     style: TextButton.styleFrom(
                                       foregroundColor: Theme.of(context).colorScheme.primary,
                                     ),
@@ -86,7 +86,7 @@ class DetailsPageContent extends StatelessWidget {
                                           viewModel.meeting?.title = viewModel.originalTitle ?? '';
                                           viewModel.notifyListeners();
                                         },
-                                        child: Text('Cancel'),
+                                        child: Text('Anuluj'),
                                       ),
                                       SizedBox(width: 8),
                                       ElevatedButton(
@@ -94,7 +94,7 @@ class DetailsPageContent extends StatelessWidget {
                                           viewModel.isTitleEditing = false;
                                           viewModel.editTitle(viewModel.meeting?.title ?? '');
                                         },
-                                        child: Text('Save'),
+                                        child: Text('Zapisz'),
                                       ),
                                     ],
                                   ),
@@ -122,7 +122,7 @@ class DetailsPageContent extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Description',
+                      'Opis',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[600],
@@ -142,7 +142,7 @@ class DetailsPageContent extends StatelessWidget {
                                 style: TextStyle(fontSize: 16),
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: 'Enter description here',
+                                  hintText: 'Wprowadź opis',
                                 ),
                                 onChanged: (value) {
                                   viewModel.meeting?.description = value;
@@ -155,7 +155,7 @@ class DetailsPageContent extends StatelessWidget {
                                   TextButton.icon(
                                     onPressed: () => viewModel.regenerateDescription(context),
                                     icon: Icon(Icons.refresh),
-                                    label: Text('Regenerate'),
+                                    label: Text('Wygeneruj ponownie'),
                                     style: TextButton.styleFrom(
                                       foregroundColor: Theme.of(context).colorScheme.primary,
                                     ),
@@ -168,7 +168,7 @@ class DetailsPageContent extends StatelessWidget {
                                           viewModel.meeting?.description = viewModel.originalDescription ?? '';
                                           viewModel.notifyListeners();
                                         },
-                                        child: Text('Cancel'),
+                                        child: Text('Anuluj'),
                                       ),
                                       SizedBox(width: 8),
                                       ElevatedButton(
@@ -176,7 +176,7 @@ class DetailsPageContent extends StatelessWidget {
                                           viewModel.isDescriptionEditing = false;
                                           viewModel.editDescription(viewModel.meeting?.description ?? '');
                                         },
-                                        child: Text('Save'),
+                                        child: Text('Zapisz'),
                                       ),
                                     ],
                                   ),
@@ -214,7 +214,7 @@ class DetailsPageContent extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () => viewModel.sendEmailWithMeetingDetails(),
                 icon: const Icon(Icons.email),
-                label: const Text('Share via Email'),
+                label: const Text('Udostępnij przez email'),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
                 ),

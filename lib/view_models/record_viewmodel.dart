@@ -124,11 +124,11 @@ class RecordViewModel extends ChangeNotifier {
   String getRecordingStatusText() {
     switch (_state) {
       case RecordingState.recording:
-        return 'Recording...';
+        return 'Nagrywanie...';
       case RecordingState.paused:
-        return 'Recording Paused';
+        return 'Nagrywanie wstrzymane';
       case RecordingState.idle:
-        return 'Ready to Record';
+        return 'Gotowy do nagrywania';
     }
   }
 

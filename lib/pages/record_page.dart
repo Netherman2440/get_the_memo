@@ -100,7 +100,7 @@ class _RecordPageContent extends StatelessWidget {
                         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
                       child: Text(
-                        'Save',
+                        'Zapisz',
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ),
@@ -117,7 +117,7 @@ class _RecordPageContent extends StatelessWidget {
                         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       ),
                       child: Text(
-                        'Cancel',
+                        'Anuluj',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Theme.of(context).colorScheme.secondary,
                         ),
@@ -165,7 +165,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
         borderRadius: BorderRadius.circular(12.0),
       ),
       title: Text(
-        'Processing Options',
+        'Opcje przetwarzania',
         style: AppTextStyles.titleStyle.copyWith(
           fontWeight: FontWeight.w500,
           color: Theme.of(context).colorScheme.onSurface,
@@ -175,7 +175,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildOptionTile(
-            title: 'Transcribe',
+            title: 'Transkrypcja',
             value: transcribe,
             onChanged: (bool? value) {
               setState(() {
@@ -190,7 +190,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
           ),
           if (transcribe) ...[
             _buildOptionTile(
-              title: 'Auto Title',
+              title: 'Automatyczny tytuł',
               value: autoTitle,
               onChanged: (bool? value) {
                 setState(() {
@@ -199,7 +199,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
               },
             ),
             _buildOptionTile(
-              title: 'Summarize',
+              title: 'Podsumowanie',
               value: summarize,
               onChanged: (bool? value) {
                 setState(() {
@@ -208,7 +208,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
               },
             ),
             _buildOptionTile(
-              title: 'Extract Tasks',
+              title: 'Wyodrębnij zadania',
               value: extractTasks,
               onChanged: (bool? value) {
                 setState(() {
@@ -223,7 +223,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: Text(
-            'Cancel',
+            'Anuluj',
             style: TextStyle(
               color: Theme.of(context).colorScheme.secondary,
             ),
@@ -249,7 +249,7 @@ class _ProcessOptionsDialogState extends State<ProcessOptionsDialog> {
               borderRadius: BorderRadius.circular(8),
             ),
           ),
-          child: Text('Process'),
+          child: Text('Przetwórz'),
         ),
       ],
     );

@@ -67,8 +67,8 @@ class MyApp extends StatelessWidget {
 
 class HomePage extends StatefulWidget {
   static const List<BottomNavigationBarItem> items = [
-    BottomNavigationBarItem(icon: Icon(Icons.mic), label: 'Record'),
-    BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+    BottomNavigationBarItem(icon: Icon(Icons.mic), label: 'Nagrywanie'),
+    BottomNavigationBarItem(icon: Icon(Icons.history), label: 'Historia'),
   ];
 
   @override
@@ -107,12 +107,12 @@ class _HomePageState extends State<HomePage> {
           NavigationDestination(
             icon: Icon(Icons.mic_outlined),
             selectedIcon: Icon(Icons.mic),
-            label: 'Record',
+            label: 'Nagrywanie',
           ),
           NavigationDestination(
             icon: Icon(Icons.history_outlined),
             selectedIcon: Icon(Icons.history),
-            label: 'History',
+            label: 'Historia',
           ),
         ],
       ),

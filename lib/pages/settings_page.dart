@@ -44,22 +44,24 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    String subtitle = _betterResults ? 'Slow and smart' : 'Fast and dumb';
+    String subtitle = _betterResults ? 'Wolno i dokładnie' : 'Szybko i prosto';
     String workDescription =
         _betterResults
-            ? '• Transcription gets reprocessed to remove repetitions, errors, and improve context\n'
-                '• Summary focuses on meeting conclusions and specifically looks for summarizing phrases\n'
-                '• Action points are generated through multiple iterations and logical combination of each generation'
-            : '• Transcription is used as-is without improvements\n'
-                '• Summary covers the entire meeting without specific focus\n'
-                '• Action points are generated in a single pass';
+            ? '• Transkrypcja jest przetwarzana w celu usunięcia powtórzeń, błędów i poprawy kontekstu\n'
+                '• Podsumowanie koncentruje się na wnioskach ze spotkania i szczególnie zwraca uwagę na kluczowe frazy\n'
+                '• Punkty akcji są generowane poprzez wielokrotne iteracje i logiczne łączenie każdej generacji\n\n'
+                'Ta opcja jest droższa, ale powinna dawać lepsze wyniki'
+            : '• Transkrypcja jest używana bez ulepszeń\n'
+                '• Podsumowanie obejmuje całe spotkanie bez szczególnego ukierunkowania\n'
+                '• Punkty akcji są generowane w pojedynczym przebiegu\n\n'
+                'Ta opcja jest tańsza, ale wyniki mogą być mniej dokładne';
     return Scaffold(
       appBar: AppBar(
-        title: Text('Settings'),
-        elevation: 0, // Flat design
+        title: Text('Ustawienia'),
+        elevation: 0,
       ),
       body: ListView(
-        padding: EdgeInsets.all(16), // Add padding around the list
+        padding: EdgeInsets.all(16),
         children: [
           Card(
             elevation: 2,
@@ -70,7 +72,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: Row(
                     children: [
                       Text(
-                        'OPENAI API Key',
+                        'Klucz OPENAI API',
                         style: AppTextStyles.contentStyle.copyWith(
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
@@ -146,7 +148,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   color: Theme.of(context).colorScheme.error,
                 ),
                 title: Text(
-                  'Security Notice',
+                  'Informacja o bezpieczeństwie',
                   style: AppTextStyles.contentStyle.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Theme.of(context).colorScheme.error,
@@ -158,20 +160,20 @@ class _SettingsPageState extends State<SettingsPage> {
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       child: Text(
-                        'Your API key is stored only on your device and is never sent to our servers. '
-                        'The app communicates directly with OpenAI servers using your key.',
+                        'Twój klucz API jest przechowywany tylko na Twoim urządzeniu i nigdy nie jest wysyłany na nasze serwery. '
+                        'Aplikacja komunikuje się bezpośrednio z serwerami OpenAI używając Twojego klucza.',
                         style: AppTextStyles.labelStyle.copyWith(
                           color: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ),
                     _buildLinkButton(
-                      'View source code on GitHub',
+                      'Zobacz kod źródłowy na GitHub',
                       'https://github.com/Netherman2440/get_the_memo',
                     ),
                     SizedBox(height: 8),
                     _buildLinkButton(
-                      'How to get OPENAI API Key?',
+                      'Jak uzyskać klucz OPENAI API?',
                       'https://help.openai.com/en/articles/4936850-where-do-i-find-my-openai-api-key',
                     ),
                   ],
@@ -184,7 +186,7 @@ class _SettingsPageState extends State<SettingsPage> {
             margin: EdgeInsets.only(bottom: 16),
             child: ListTile(
               title: Text(
-                'OpenAI Model',
+                'Model OpenAI',
                 style: AppTextStyles.contentStyle.copyWith(
                   fontWeight: FontWeight.bold,
                   letterSpacing: 0.5,
@@ -227,7 +229,7 @@ class _SettingsPageState extends State<SettingsPage> {
             elevation: 2,
             margin: EdgeInsets.only(bottom: 16),
             child: ListTile(
-              title: Text('How do you want AI to work?'),
+              title: Text('Jak ma działać AI?'),
               subtitle: Text(subtitle),
               trailing: Switch(
                 value: _betterResults,
@@ -245,7 +247,7 @@ class _SettingsPageState extends State<SettingsPage> {
             elevation: 2,
             margin: EdgeInsets.only(bottom: 16),
             child: ListTile(
-              title: Text('How this works?'),
+              title: Text('Jak to działa?'),
               subtitle: Text(workDescription),
             ),
           ),

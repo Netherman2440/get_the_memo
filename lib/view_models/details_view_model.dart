@@ -287,12 +287,12 @@ class DetailsViewModel extends ChangeNotifier {
           onPressed: () {
             createTranscript(context, meeting!.id);
           },
-          child: const Text('Create Transcript'),
+          child: const Text('Utwórz transkrypcję'),
         );
       case StepStatus.queue:
         return ElevatedButton(
           onPressed: null,
-          child: const Text('Transcription in queue'),
+          child: const Text('Transkrypcja w kolejce'),
         );
       case StepStatus.inProgress:
         return ElevatedButton(
@@ -311,7 +311,7 @@ class DetailsViewModel extends ChangeNotifier {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text('Transcription in progress'),
+              const Text('Trwa transkrypcja'),
             ],
           ),
         );
@@ -327,7 +327,7 @@ class DetailsViewModel extends ChangeNotifier {
               title: Row(
                 children: [
                   Text(
-                    'Transcript',
+                    'Transkrypcja',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   if (transcriptionStatus == StepStatus.inProgress)
@@ -372,7 +372,7 @@ class DetailsViewModel extends ChangeNotifier {
                                   style: TextStyle(fontSize: 12),
                                   decoration: InputDecoration(
                                     border: OutlineInputBorder(),
-                                    hintText: 'Enter transcript here',
+                                    hintText: 'Wprowadź transkrypcję',
                                   ),
                                   onChanged: (value) {
                                     transcript = value;
@@ -387,7 +387,7 @@ class DetailsViewModel extends ChangeNotifier {
                                       onPressed:
                                           () => regenerateTranscript(context),
                                       icon: Icon(Icons.refresh),
-                                      label: Text('Regenerate'),
+                                      label: Text('Powtórz'),
                                       style: TextButton.styleFrom(
                                         foregroundColor:
                                             Theme.of(
@@ -403,7 +403,7 @@ class DetailsViewModel extends ChangeNotifier {
                                             transcript = originalTranscript;
                                             notifyListeners();
                                           },
-                                          child: Text('Cancel'),
+                                          child: Text('Anuluj'),
                                         ),
                                         SizedBox(width: 8),
                                         ElevatedButton(
@@ -412,7 +412,7 @@ class DetailsViewModel extends ChangeNotifier {
                                             editTranscript(transcript!);
                                             notifyListeners();
                                           },
-                                          child: Text('Save'),
+                                          child: Text('Zapisz'),
                                         ),
                                       ],
                                     ),
@@ -435,7 +435,7 @@ class DetailsViewModel extends ChangeNotifier {
           onPressed: () {
             createTranscript(context, meeting!.id);
           },
-          child: const Text('Retry Transcription'),
+          child: const Text('Powtórz'),
         );
     }
   }
@@ -453,12 +453,12 @@ class DetailsViewModel extends ChangeNotifier {
           onPressed: () {
             createSummary(context, meeting!.id);
           },
-          child: const Text('Create Summary'),
+          child: const Text('Utwórz podsumowanie'),
         );
       case StepStatus.queue:
         return ElevatedButton(
           onPressed: null,
-          child: const Text('Summary in queue'),
+          child: const Text('Podsumowanie w kolejce'),
         );
       case StepStatus.inProgress:
         return ElevatedButton(
@@ -477,7 +477,7 @@ class DetailsViewModel extends ChangeNotifier {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text('Summary in progress'),
+              const Text('Trwa podsumowanie'),
             ],
           ),
         );
@@ -493,7 +493,7 @@ class DetailsViewModel extends ChangeNotifier {
               title: Row(
                 children: [
                   Text(
-                    'Summary',
+                    'Podsumowanie',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   if (summaryStatus == StepStatus.inProgress)
@@ -538,7 +538,7 @@ class DetailsViewModel extends ChangeNotifier {
                                   style: TextStyle(fontSize: 12),
                                   decoration: InputDecoration(
                                     border: OutlineInputBorder(),
-                                    hintText: 'Enter summary here',
+                                    hintText: 'Wprowadź podsumowanie',
                                   ),
                                   onChanged: (value) {
                                     summary = value;
@@ -553,7 +553,7 @@ class DetailsViewModel extends ChangeNotifier {
                                       onPressed:
                                           () => regenerateSummary(context),
                                       icon: Icon(Icons.refresh),
-                                      label: Text('Regenerate'),
+                                      label: Text('Powtórz'),
                                       style: TextButton.styleFrom(
                                         foregroundColor:
                                             Theme.of(
@@ -569,7 +569,7 @@ class DetailsViewModel extends ChangeNotifier {
                                             summary = originalSummary;
                                             notifyListeners();
                                           },
-                                          child: Text('Cancel'),
+                                          child: Text('Anuluj'),
                                         ),
                                         SizedBox(width: 8),
                                         ElevatedButton(
@@ -578,7 +578,7 @@ class DetailsViewModel extends ChangeNotifier {
                                             editSummary(summary!);
                                             notifyListeners();
                                           },
-                                          child: Text('Save'),
+                                          child: Text('Zapisz'),
                                         ),
                                       ],
                                     ),
@@ -601,7 +601,7 @@ class DetailsViewModel extends ChangeNotifier {
           onPressed: () {
             createSummary(context, meeting!.id);
           },
-          child: const Text('Retry Summary'),
+          child: const Text('Powtórz'),
         );
     }
   }
@@ -618,12 +618,12 @@ class DetailsViewModel extends ChangeNotifier {
           onPressed: () {
             createTasks(context, meeting!.id);
           },
-          child: const Text('Create Action Points'),
+          child: const Text('Utwórz zadania'),
         );
       case StepStatus.queue:
         return ElevatedButton(
           onPressed: null,
-          child: const Text('Action Points in queue'),
+          child: const Text('Zadania w kolejce'),
         );
       case StepStatus.inProgress:
         return ElevatedButton(
@@ -642,7 +642,7 @@ class DetailsViewModel extends ChangeNotifier {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text('Action Points in progress'),
+              const Text('Trwa tworzenie zadań'),
             ],
           ),
         );
@@ -658,7 +658,7 @@ class DetailsViewModel extends ChangeNotifier {
               title: Row(
                 children: [
                   Text(
-                    'Action Points',
+                    'Zadania',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
                   if (tasksStatus == StepStatus.inProgress)
@@ -693,7 +693,7 @@ class DetailsViewModel extends ChangeNotifier {
                           TextButton.icon(
                             onPressed: () => regenerateActionPoints(context),
                             icon: Icon(Icons.refresh),
-                            label: Text('Regenerate'),
+                            label: Text('Powtórz'),
                             style: TextButton.styleFrom(
                               foregroundColor: Theme.of(context).colorScheme.primary,
                             ),
@@ -703,13 +703,13 @@ class DetailsViewModel extends ChangeNotifier {
                             onPressed: () {
                               showEditDialog(
                                 context: context,
-                                title: 'Add New Action Point',
+                                title: 'Dodaj nowe zadanie',
                                 initialContent: '',
                                 onSave: (newValue) => addActionPoint(newValue),
                               );
                             },
                             icon: Icon(Icons.add),
-                            label: Text('Add'),
+                            label: Text('Dodaj'),
                             style: TextButton.styleFrom(
                               foregroundColor: Theme.of(context).colorScheme.primary,
                             ),
@@ -728,7 +728,7 @@ class DetailsViewModel extends ChangeNotifier {
           onPressed: () {
             createTasks(context, meeting!.id);
           },
-          child: const Text('Retry Action Points'),
+          child: const Text('Powtórz'),
         );
     }
   }
@@ -764,7 +764,7 @@ class DetailsViewModel extends ChangeNotifier {
                           style: TextStyle(fontSize: 12),
                           decoration: InputDecoration(
                             border: OutlineInputBorder(),
-                            hintText: 'Enter action point here',
+                            hintText: 'Wprowadź zadanie',
                           ),
                           onChanged: (value) {
                             tasks[index] = value;
@@ -778,14 +778,14 @@ class DetailsViewModel extends ChangeNotifier {
                               onPressed: () {
                                 cancelActionPointEditing();
                               },
-                              child: Text('Cancel'),
+                              child: Text('Wróć'),
                             ),
                             SizedBox(width: 8),
                             ElevatedButton(
                               onPressed: () {
                                 saveActionPointEdit();
                               },
-                              child: Text('Save'),
+                              child: Text('Zapisz'),
                             ),
                           ],
                         ),
@@ -822,65 +822,61 @@ class DetailsViewModel extends ChangeNotifier {
 
     showDialog(
       context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(title),
-            content: TextField(
-              controller: controller,
-              maxLines: null,
-              style: TextStyle(fontSize: 12),
-              decoration: InputDecoration(
-                border: OutlineInputBorder(),
-                hintText: 'Enter text here',
-              ),
-              autofocus: true,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () {
-                  onSave(controller.text);
-                  Navigator.pop(context);
-                },
-                child: Text('Save'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: TextField(
+          controller: controller,
+          maxLines: null,
+          style: TextStyle(fontSize: 12),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'Wprowadź tekst tutaj',
           ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Anuluj'),
+          ),
+          TextButton(
+            onPressed: () {
+              onSave(controller.text);
+              Navigator.pop(context);
+            },
+            child: Text('Zapisz'),
+          ),
+        ],
+      ),
     );
   }
 
   Future<void> sendEmailWithMeetingDetails() async {
-    // Prepare email content
-    final subject = 'Meeting: ${meeting?.title ?? "No title"}';
+    final subject = 'Spotkanie: ${meeting?.title ?? "Brak tytułu"}';
     final body = '''
-Meeting Details:
-Title: ${meeting?.title ?? "No title"}
-Description: ${meeting?.description ?? "No description"}
+Szczegóły spotkania:
+Tytuł: ${meeting?.title ?? "Brak tytułu"}
+Opis: ${meeting?.description ?? "Brak opisu"}
 
-Summary:
-${summary ?? "No summary available"}
+Podsumowanie:
+${summary ?? "Brak podsumowania"}
 
-Action Points:
-${tasks.isNotEmpty ? tasks.map((task) => "- $task").join("\n") : "No action points available"}
+Zadania:
+${tasks.isNotEmpty ? tasks.map((task) => "- $task").join("\n") : "Brak zadań"}
 
-Transcript:
-${transcript ?? "No transcript available"}
+Transkrypcja:
+${transcript ?? "Brak transkrypcji"}
 ''';
 
-    // Create the URL
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
       query: encodeQueryParameters({'subject': subject, 'body': body}),
     );
 
-    // Launch the URL
     if (await canLaunchUrl(emailLaunchUri)) {
       await launchUrl(emailLaunchUri);
     } else {
-      throw 'Could not launch email client';
+      throw 'Nie można uruchomić klienta poczty';
     }
   }
 

@@ -15,7 +15,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String _apiKey = '';
   bool _showApiKey = false;
   bool _showSecurityInfo = false;
-
+  bool _betterResults = false;
   bool darkMode = true;
   OpenAIModel _openaiModel = OpenAIModel.o3Mini;
   SharedPreferences? prefs;
@@ -35,7 +35,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _openaiModel = OpenAIModel.values.firstWhere(
       (e) => e.modelId == savedModel,
     );
-    darkMode = prefs?.getBool('dark_mode') ?? true; 
+    darkMode = prefs?.getBool('dark_mode') ?? true;
+    _betterResults = prefs?.getBool('better_results') ?? false;
     setState(() {
       _apiKey = apiKey;
     });
@@ -43,6 +44,15 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    String subtitle = _betterResults ? 'Slow and smart' : 'Fast and dumb';
+    String workDescription =
+        _betterResults
+            ? '• Transcription gets reprocessed to remove repetitions, errors, and improve context\n'
+                '• Summary focuses on meeting conclusions and specifically looks for summarizing phrases\n'
+                '• Action points are generated through multiple iterations and logical combination of each generation'
+            : '• Transcription is used as-is without improvements\n'
+                '• Summary covers the entire meeting without specific focus\n'
+                '• Action points are generated in a single pass';
     return Scaffold(
       appBar: AppBar(
         title: Text('Settings'),
@@ -111,7 +121,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         _showApiKey = !_showApiKey;
                       });
                     },
-                    icon: Icon(_showApiKey ? Icons.visibility : Icons.visibility_off),
+                    icon: Icon(
+                      _showApiKey ? Icons.visibility : Icons.visibility_off,
+                    ),
                   ),
                 ),
               ],
@@ -123,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
               elevation: 2,
               margin: EdgeInsets.only(bottom: 16),
               color: Color.fromARGB(
-                76,  // 30% of 255 (0.3 opacity)
+                76, // 30% of 255 (0.3 opacity)
                 Theme.of(context).colorScheme.errorContainer.red,
                 Theme.of(context).colorScheme.errorContainer.green,
                 Theme.of(context).colorScheme.errorContainer.blue,
@@ -197,14 +209,44 @@ class _SettingsPageState extends State<SettingsPage> {
                       prefs?.setString('openai_model', value.modelId);
                     });
                   },
-                  items: OpenAIModel.values
-                      .map((e) => DropdownMenuItem(
-                            value: e,
-                            child: Text(e.modelId),
-                          ))
-                      .toList(),
+                  items:
+                      OpenAIModel.values
+                          .map(
+                            (e) => DropdownMenuItem(
+                              value: e,
+                              child: Text(e.modelId),
+                            ),
+                          )
+                          .toList(),
                 ),
               ),
+            ),
+          ),
+
+          Card(
+            elevation: 2,
+            margin: EdgeInsets.only(bottom: 16),
+            child: ListTile(
+              title: Text('How do you want AI to work?'),
+              subtitle: Text(subtitle),
+              trailing: Switch(
+                value: _betterResults,
+                onChanged: (value) {
+                  setState(() {
+                    _betterResults = value;
+                    prefs?.setBool('better_results', value);
+                  });
+                },
+              ),
+            ),
+          ),
+
+          Card(
+            elevation: 2,
+            margin: EdgeInsets.only(bottom: 16),
+            child: ListTile(
+              title: Text('How this works?'),
+              subtitle: Text(workDescription),
             ),
           ),
         ],
@@ -214,10 +256,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _buildLinkButton(String text, String url) {
     return InkWell(
-      onTap: () => launchUrl(
-        Uri.parse(url),
-        mode: LaunchMode.externalApplication,
-      ),
+      onTap:
+          () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
       child: Text(
         text,
         style: AppTextStyles.labelStyle.copyWith(

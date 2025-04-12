@@ -244,6 +244,9 @@ class DetailsViewModel extends ChangeNotifier {
   // Update the expansion handler
   void handleSectionExpansion(String section) {
     cancelAllEditing();
+    if (editingActionPointIndex != null) {
+      cancelActionPointEditing();
+    }
   }
 
   Future<void> regenerateTranscript(BuildContext context) async {
@@ -314,9 +317,7 @@ class DetailsViewModel extends ChangeNotifier {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.onPrimary,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
               const SizedBox(width: 10),
@@ -368,9 +369,12 @@ class DetailsViewModel extends ChangeNotifier {
                     onTap: () {
                       startTranscriptEditing();
                     },
-                    child:
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Content first
                         isTranscriptEditing
-                            ? Column(
+                          ? Column(
                               children: [
                                 TextField(
                                   controller: TextEditingController(
@@ -389,50 +393,65 @@ class DetailsViewModel extends ChangeNotifier {
                                 ),
                                 SizedBox(height: 8),
                                 Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    TextButton.icon(
-                                      onPressed:
-                                          () => regenerateTranscript(context),
-                                      icon: Icon(Icons.refresh),
-                                      label: Text('Powtórz'),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                      ),
+                                    TextButton(
+                                      onPressed: () {
+                                        isTranscriptEditing = false;
+                                        transcript = originalTranscript;
+                                        notifyListeners();
+                                      },
+                                      child: Text('Anuluj'),
                                     ),
-                                    Row(
-                                      children: [
-                                        TextButton(
-                                          onPressed: () {
-                                            isTranscriptEditing = false;
-                                            transcript = originalTranscript;
-                                            notifyListeners();
-                                          },
-                                          child: Text('Anuluj'),
-                                        ),
-                                        SizedBox(width: 8),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            isTranscriptEditing = false;
-                                            editTranscript(transcript!);
-                                            notifyListeners();
-                                          },
-                                          child: Text('Zapisz'),
-                                        ),
-                                      ],
+                                    SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        isTranscriptEditing = false;
+                                        editTranscript(transcript!);
+                                        notifyListeners();
+                                      },
+                                      child: Text('Zapisz'),
                                     ),
                                   ],
                                 ),
                               ],
                             )
-                            : Text(
-                              transcript ?? '',
-                              style: TextStyle(fontSize: 12),
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  transcript ?? '',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    TextButton.icon(
+                                      onPressed: () => regenerateTranscript(context),
+                                      icon: Icon(Icons.refresh),
+                                      label: Text('Powtórz'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        startTranscriptEditing();
+                                      },
+                                      icon: Icon(Icons.edit),
+                                      label: Text('Edytuj'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -479,9 +498,7 @@ class DetailsViewModel extends ChangeNotifier {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.onPrimary,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
               const SizedBox(width: 10),
@@ -533,9 +550,12 @@ class DetailsViewModel extends ChangeNotifier {
                     onTap: () {
                       startSummaryEditing();
                     },
-                    child:
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Content first
                         isSummaryEditing
-                            ? Column(
+                          ? Column(
                               children: [
                                 TextField(
                                   controller: TextEditingController(
@@ -554,50 +574,65 @@ class DetailsViewModel extends ChangeNotifier {
                                 ),
                                 SizedBox(height: 8),
                                 Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    TextButton.icon(
-                                      onPressed:
-                                          () => regenerateSummary(context),
-                                      icon: Icon(Icons.refresh),
-                                      label: Text('Powtórz'),
-                                      style: TextButton.styleFrom(
-                                        foregroundColor:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                      ),
+                                    TextButton(
+                                      onPressed: () {
+                                        isSummaryEditing = false;
+                                        summary = originalSummary;
+                                        notifyListeners();
+                                      },
+                                      child: Text('Anuluj'),
                                     ),
-                                    Row(
-                                      children: [
-                                        TextButton(
-                                          onPressed: () {
-                                            isSummaryEditing = false;
-                                            summary = originalSummary;
-                                            notifyListeners();
-                                          },
-                                          child: Text('Anuluj'),
-                                        ),
-                                        SizedBox(width: 8),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            isSummaryEditing = false;
-                                            editSummary(summary!);
-                                            notifyListeners();
-                                          },
-                                          child: Text('Zapisz'),
-                                        ),
-                                      ],
+                                    SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        isSummaryEditing = false;
+                                        editSummary(summary!);
+                                        notifyListeners();
+                                      },
+                                      child: Text('Zapisz'),
                                     ),
                                   ],
                                 ),
                               ],
                             )
-                            : Text(
-                              summary ?? '',
-                              style: TextStyle(fontSize: 12),
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  summary ?? '',
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                                SizedBox(height: 16),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    TextButton.icon(
+                                      onPressed: () => regenerateSummary(context),
+                                      icon: Icon(Icons.refresh),
+                                      label: Text('Powtórz'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    TextButton.icon(
+                                      onPressed: () {
+                                        startSummaryEditing();
+                                      },
+                                      icon: Icon(Icons.edit),
+                                      label: Text('Edytuj'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Theme.of(context).colorScheme.primary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -644,9 +679,7 @@ class DetailsViewModel extends ChangeNotifier {
                 height: 16,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.onPrimary,
-                  ),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                 ),
               ),
               const SizedBox(width: 10),

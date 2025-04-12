@@ -718,6 +718,11 @@ class DetailsViewModel extends ChangeNotifier {
                     ),
                 ],
               ),
+              onExpansionChanged: (isExpanded) {
+                if (!isExpanded) {
+                  handleSectionExpansion('tasks');
+                }
+              },
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16.0),

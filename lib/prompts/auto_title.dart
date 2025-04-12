@@ -26,7 +26,7 @@ AI:
 {
   "thinking": "Zaczynając od analizy transkrypcji, główny temat to 'projekt X' oraz szczegółowy przebieg prac.",
   "title": "Projekt X",
-  "description": "Spotkanie zespołu projektowego. Uczestnicy: Jan Kowalski, Anna Nowak. Tematyka: Postęp prac nad projektem X."
+  "description": "Omówienie postępu prac nad projektem X z udziałem Jana Kowalskiego i Anny Nowak."
 }
 USER: "Transkrypcja dyskusji o wyzwaniach sprzedaży w nadchodzącym kwartale. Udział: Dział Sprzedaży, Kierownik Sprzedaży."
 AI:
@@ -34,7 +34,7 @@ AI:
 {
   "thinking": "Spotkanie obraca się wokół planów i wyzwań sprzedażowych.",
   "title": "Sprzedaż Kwartalna",
-  "description": "Spotkanie działu sprzedaży z udziałem kierownika sprzedaży. Omówienie wyzwań na nadchodzący kwartał."
+  "description": "Analiza wyzwań sprzedażowych na kolejny kwartał z działem i kierownikiem sprzedaży."
 }
 USER: "Rozmowa o sprawach bieżących bez wyraźnego tematu przewodniego. Obecni byli różni członkowie firmy."
 AI:

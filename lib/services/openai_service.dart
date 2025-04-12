@@ -144,17 +144,60 @@ class OpenAIService {
     }
   }
 
-  List<String> formatActionPoints(String text) {
+  Future<String> actionPoints(String text, String meetingId) async {
     try {
-      // Parse the JSON string
-      Map<String, dynamic> jsonData = jsonDecode(text);
+      final messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.system,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(
+              _betterResults ? oldActionPointsPrompt : actionPointsPrompt,
+            ),
+          ],
+        ),
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.user,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(text),
+          ],
+        ),
+      ];
+      final completion = await chat(messages);
+      final completionText = completion.content!.first.text!;
+
+      final formattedTasks = formatActionPoints(completionText);
+      var tasksJson = jsonEncode({'tasks': formattedTasks});
       
-      // Extract titles from tasks array
-      List<dynamic> tasks = jsonData['tasks'];
-      return tasks.map((task) => task['title'] as String).toList();
-    } catch (e) {
+      await DatabaseService.insertTasks(meetingId, tasksJson);
+      return tasksJson;
+    } catch (e, stackTrace) {
+      print('Error in actionPoints: $e');
+      print('Stack trace: $stackTrace');
+      throw e;
+    }
+  }
+
+  List<Map<String, dynamic>> formatActionPoints(String text) {
+    try {
+      Map<String, dynamic> jsonData = jsonDecode(text);
+      List<dynamic> rawTasks = jsonData['tasks'];
+      
+      var formattedTasks = rawTasks.map((task) {
+        if (task is Map) {
+          return Map<String, dynamic>.from(task);
+        }
+        return {
+          'title': task.toString(),
+          'assignee': '',
+          'description': ''
+        };
+      }).toList();
+      
+      return formattedTasks;
+    } catch (e, stackTrace) {
       print('Error formatting action points: $e');
-      return [];
+      print('Stack trace: $stackTrace');
+      throw e;
     }
   }
 
@@ -180,40 +223,6 @@ class OpenAIService {
       return completionText;  
     } catch (e) {
       print(e);
-      throw e;
-    }
-  }
-
-
-  Future<String> actionPoints(String text, String meetingId) async {
-    try {
-      final messages = [
-        OpenAIChatCompletionChoiceMessageModel(
-          role: OpenAIChatMessageRole.system,
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              _betterResults ? oldActionPointsPrompt : actionPointsPrompt,
-            ),
-          ],
-        ),
-        OpenAIChatCompletionChoiceMessageModel(
-          role: OpenAIChatMessageRole.user,
-          content: [
-            OpenAIChatCompletionChoiceMessageContentItemModel.text(text),
-          ],
-        ),
-      ];
-      final completion = await chat(messages);
-      final completionText = completion.content!.first.text!;
-      print('Completion Text: $completionText');
-
-      final formattedTasks = formatActionPoints(completionText);
-      var tasksJson = jsonEncode(formattedTasks);
-      await DatabaseService.insertTasks(meetingId, tasksJson);
-      return tasksJson;
-    } catch (e) {
-      print(e);
-      //await DatabaseService.updateTasks(meetingId, 'Error: $e');
       throw e;
     }
   }

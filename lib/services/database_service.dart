@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as path;
@@ -327,7 +329,7 @@ class DatabaseService {
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  static Future<String?> getTasks(String meetingId) async {
+  static Future<List<Map<String, dynamic>>?> getTasks(String meetingId) async {
     final List<Map<String, dynamic>> maps = await db?.query(
           tableTasks,
           columns: [columnTasksText],
@@ -339,19 +341,61 @@ class DatabaseService {
         [];
 
     if (maps.isEmpty) return null;
-    return maps.first[columnTasksText];
+    
+    try {
+      String tasksJson = maps.first[columnTasksText];
+      dynamic decodedData = jsonDecode(tasksJson);
+      
+      List<dynamic> tasksList;
+      if (decodedData is Map && decodedData.containsKey('tasks')) {
+        tasksList = decodedData['tasks'];
+      } else if (decodedData is List) {
+        tasksList = decodedData;
+      } else {
+        return [];
+      }
+
+      return List<Map<String, dynamic>>.from(
+        tasksList.map((task) {
+          if (task is Map) {
+            return Map<String, dynamic>.from(task);
+          }
+          return {
+            'title': task.toString(),
+            'assignee': '',
+            'description': ''
+          };
+        })
+      );
+    } catch (e, stackTrace) {
+      print('Error decoding tasks: $e');
+      print('Stack trace: $stackTrace');
+      throw e;
+    }
   }
 
   static Future<void> updateTasks(String meetingId, String tasks) async {
-    await db?.update(
-      tableTasks,
-      {
-        columnTasksText: tasks,
-        columnTasksCreatedAt: DateTime.now().toIso8601String(),
-      },
-      where: '$columnMeetingId = ?',
-      whereArgs: [meetingId],
-    );
+    try {
+      // Validate JSON structure before saving
+      final decoded = jsonDecode(tasks);
+      if (!decoded.containsKey('tasks')) {
+        tasks = jsonEncode({'tasks': jsonDecode(tasks)});
+      }
+      
+      await db?.update(
+        tableTasks,
+        {
+          columnTasksText: tasks,
+          columnTasksCreatedAt: DateTime.now().toIso8601String(),
+        },
+        where: '$columnMeetingId = ?',
+        whereArgs: [meetingId],
+      );
+    } catch (e, stackTrace) {
+      print('Error updating tasks: $e');
+      print('Stack trace: $stackTrace');
+      throw e;
+    }
   }
 
   //region AutoTitle
@@ -362,6 +406,21 @@ class DatabaseService {
     }, where: '$columnId = ?', whereArgs: [meetingId], conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
-  
-  
+  // Add debug method to list all tasks
+  static Future<void> debugListAllTasks() async {
+    print('\n--- DEBUG: All Tasks ---');
+    final List<Map<String, dynamic>> allTasks =
+        await db?.query(tableTasks) ?? [];
+    print('Total tasks records found: ${allTasks.length}');
+    for (var task in allTasks) {
+      print('Task record: $task');
+      try {
+        dynamic decoded = jsonDecode(task[columnTasksText]);
+        print('Decoded content: $decoded');
+      } catch (e) {
+        print('Failed to decode task content: $e');
+      }
+    }
+    print('-------------------------------\n');
+  }
 }

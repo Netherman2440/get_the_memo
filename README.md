@@ -1,6 +1,6 @@
-# Get The Memo 🎯
+# Meet Note 🎯
 
-Get The Memo is an AI-powered mobile application that automatically generates comprehensive memos from business meetings. It helps teams capture, organize, and share important information efficiently.
+Meet Note is an AI-powered mobile application that automatically generates comprehensive memos from business meetings. It helps teams capture, organize, and share important information efficiently.
 
 You can get the .apk file from [here](https://github.com/Netherman2440/get_the_memo/releases).
 

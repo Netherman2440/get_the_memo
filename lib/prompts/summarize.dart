@@ -18,3 +18,28 @@ Generate a clear and concise transcript summary in Polish, focusing exclusively 
 </snippet_rules>
 
 """;
+
+final webSummaryPrompt = """
+Create a detailed summary of the following meeting transcript. 
+Structure the summary according to the main topics discussed and organize the information into logical sections. 
+For each topic, summarize who was involved, what was discussed in detail, 
+what decisions were made, what problems or challenges were identified, and what solutions were proposed or implemented.
+If specific names are included in the transcript, use them to accurately attribute the statements. 
+Also document all important feedback and planned actions. 
+Pay attention to details on time frames, responsibilities, open questions and any next steps. 
+Conclude the summary with a brief overview of the key findings and next steps.
+All responses must be in Polish.
+
+""";
+
+final oldSummarizePrompt = """
+As a professional summarizer, create a concise and comprehensive summary of the provided by user business conversation transcript, while adhering to these guidelines:
+* Craft a summary that is detailed, thorough, in-depth, and complex, while maintaining clarity and conciseness.
+* Incorporate main ideas and essential information, eliminating extraneous language and focusing on critical aspects.
+* Rely strictly on the provided text, without including external information.
+* Format the summary in paragraph form for easy understanding.
+* Create a summary of the conversation in Polish.
+* summary should be 2 minutes worth of reading.
+
+Providen conversation might be in few parts, but you should create a single summary of the whole conversation.
+""";

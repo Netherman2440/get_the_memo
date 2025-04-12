@@ -7,6 +7,7 @@ import 'package:get_the_memo/prompts/auto_title.dart';
 import 'package:get_the_memo/services/api_key_service.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:get_the_memo/prompts/fix_transcription.dart' as fix_transcription;
 
 enum OpenAIModel {
   gpt4oMini('gpt-4o-mini'),
@@ -47,14 +48,17 @@ class InsufficientFundsException extends OpenAIException {
 class OpenAIService {
   late String model;
 
+  bool _betterResults = false;
+  SharedPreferences? prefs;
   Future<void> init() async {
     final apiKeyService = ApiKeyService();
     OpenAI.apiKey = await apiKeyService.getApiKey();
     OpenAI.requestsTimeOut = const Duration(seconds: 3600);
     
-    final prefs = await SharedPreferences.getInstance();
-    final savedModel = prefs.getString('openai_model') ?? OpenAIModel.o3Mini.modelId;
+    prefs = await SharedPreferences.getInstance();
+    final savedModel = prefs!.getString('openai_model') ?? OpenAIModel.o3Mini.modelId;
     model = savedModel;
+    _betterResults = prefs!.getBool('better_results') ?? false;
   }
 
   Future<OpenAIChatCompletionChoiceMessageModel> chat(
@@ -82,14 +86,43 @@ class OpenAIService {
     }
   }
 
-  Future<String> summarize(String text, String meetingId) async {
+  Future<String> fixTranscript(String text, String meetingId) async {
     try {
       final messages = [
         OpenAIChatCompletionChoiceMessageModel(
           role: OpenAIChatMessageRole.system,
           content: [
             OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              summarizePrompt,
+              fix_transcription.generatedPrompt,
+            ),
+          ],
+        ),
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.user,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(text),
+          ],
+        ),
+      ];
+      final completion = await chat(messages);  
+      final completionText = completion.content!.first.text!;
+      await DatabaseService.updateTranscription(meetingId, completionText);
+      return completionText;
+    } catch (e) {
+      print(e);
+      throw e;
+    }
+  }
+
+  Future<String> summarize(String text, String meetingId) async {
+    try {
+      _betterResults = prefs!.getBool('better_results') ?? false;
+      final messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.system,
+          content: [
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(
+              _betterResults ? oldSummarizePrompt : summarizePrompt,
             ),
           ],
         ),
@@ -112,16 +145,45 @@ class OpenAIService {
   }
 
   List<String> formatActionPoints(String text) {
-    // Split by newline and process each line
-    return text
-        .split('\n')
-        .map((line) => line.trim())
-        // Remove empty lines
-        .where((line) => line.isNotEmpty)
-        // Remove leading dash and whitespace
-        .map((line) => line.replaceFirst(RegExp(r'^[-•*]\s*'), ''))
-        .toList();
+    try {
+      // Parse the JSON string
+      Map<String, dynamic> jsonData = jsonDecode(text);
+      
+      // Extract titles from tasks array
+      List<dynamic> tasks = jsonData['tasks'];
+      return tasks.map((task) => task['title'] as String).toList();
+    } catch (e) {
+      print('Error formatting action points: $e');
+      return [];
+    }
   }
+
+  Future<String> batchTasks(List<String> texts, String meetingId) async {
+    try {
+      final messages = [
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.system,
+          content: [  
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(batchTasksPrompt),
+          ],
+        ),
+        OpenAIChatCompletionChoiceMessageModel(
+          role: OpenAIChatMessageRole.user,
+          content: [  
+            OpenAIChatCompletionChoiceMessageContentItemModel.text(texts.join('\n')),
+          ],
+        ),
+      ];
+      final completion = await chat(messages);
+      final completionText = completion.content!.first.text!;
+      await DatabaseService.insertTasks(meetingId, completionText);
+      return completionText;  
+    } catch (e) {
+      print(e);
+      throw e;
+    }
+  }
+
 
   Future<String> actionPoints(String text, String meetingId) async {
     try {
@@ -130,7 +192,7 @@ class OpenAIService {
           role: OpenAIChatMessageRole.system,
           content: [
             OpenAIChatCompletionChoiceMessageContentItemModel.text(
-              actionPointsPrompt,
+              _betterResults ? oldActionPointsPrompt : actionPointsPrompt,
             ),
           ],
         ),

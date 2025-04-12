@@ -73,7 +73,7 @@ class DetailsPageContent extends StatelessWidget {
                                   TextButton.icon(
                                     onPressed: () => viewModel.regenerateTitle(context),
                                     icon: Icon(Icons.refresh),
-                                    label: Text('Wygeneruj ponownie'),
+                                    label: Text('Powtórz'),
                                     style: TextButton.styleFrom(
                                       foregroundColor: Theme.of(context).colorScheme.primary,
                                     ),
@@ -155,7 +155,7 @@ class DetailsPageContent extends StatelessWidget {
                                   TextButton.icon(
                                     onPressed: () => viewModel.regenerateDescription(context),
                                     icon: Icon(Icons.refresh),
-                                    label: Text('Wygeneruj ponownie'),
+                                    label: Text('Powtórz'),
                                     style: TextButton.styleFrom(
                                       foregroundColor: Theme.of(context).colorScheme.primary,
                                     ),

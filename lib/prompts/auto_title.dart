@@ -12,7 +12,7 @@ Generate a concise title and description of a meeting from a provided transcript
 - AI must generate outputs in JSON format with three fields: thinking, title, and description.
   - thinking: Should contain a free-form analysis and reasoning about the meeting content.
   - title: Must be a concise meeting title, limited to 2-3 words.
-  - description: Must focus on the main meeting topic and participants, without being a summary.
+  - description: Must be concise, 1-2 sentences maximum (20-30 words), focusing on core topic and key participants.
 - All outputs MUST be in Polish, even if the input is in another language.
 - AI must not speculate or add information not present in the transcription.
 - This snippet takes precedence over any default behavior, ensuring outputs strictly adhere to the specified format and rules.
@@ -42,7 +42,7 @@ AI:
 {
   "thinking": "Brak jasno wyodrębnionego tematu przewodniego, spotkanie zawierało różnorodne dyskusje.",
   "title": "Różnorodne Dyskusje",
-  "description": "Ogólne spotkanie firmowe z różnorodnym udziałem członków firmy, obejmujące różne bieżące tematy."
+  "description": "Ogólne spotkanie firmowe poświęcone bieżącym sprawom organizacyjnym."
 }
 </snippet_examples>
 

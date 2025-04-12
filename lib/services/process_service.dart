@@ -6,6 +6,7 @@ import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/services/openai_service.dart';
 import 'package:get_the_memo/services/whisper_service.dart';
 import 'package:get_the_memo/services/notification_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProcessService extends ChangeNotifier {
   static ProcessService? _instance;
@@ -19,6 +20,8 @@ class ProcessService extends ChangeNotifier {
 
   final openai_service = OpenAIService();
   final whisper_service = WhisperService();
+  SharedPreferences? prefs;
+  bool _betterResults = false;
   List<Process> processes = [];
 
   Future<void> process_Meeting(
@@ -27,8 +30,13 @@ class ProcessService extends ChangeNotifier {
     List<ProcessType> request,
   ) async {
     try {
-      showSnackBar(context, 'Rozpoczynanie nowego procesu...', MessageType.success);
-
+      showSnackBar(
+        context,
+        'Rozpoczynanie nowego procesu...',
+        MessageType.success,
+      );
+      prefs = await SharedPreferences.getInstance();
+      _betterResults = prefs?.getBool('better_results') ?? false;
       Process? process = getProcess(meeting.id, request);
       //check if there is a process for this meeting
       if (process != null) {
@@ -43,9 +51,7 @@ class ProcessService extends ChangeNotifier {
               'Proces już zawiera kroki, które są w żądaniu',
               MessageType.error,
             );
-            throw Exception(
-              'Proces już zawiera kroki, które są w żądaniu',
-            );
+            throw Exception('Proces już zawiera kroki, które są w żądaniu');
           }
         }
       }
@@ -64,7 +70,9 @@ class ProcessService extends ChangeNotifier {
           throw Exception('Audio URL is null');
         }
 
-        Step step = process.steps[request.indexOf(ProcessType.transcription)];
+        transcript = await generateTranscript(meeting.audioUrl!, meeting.id);
+
+        /*Step step = process.steps[request.indexOf(ProcessType.transcription)];
         step.status = StepStatus.inProgress;
         //
           transcript = await whisper_service.processTranscription(
@@ -74,7 +82,7 @@ class ProcessService extends ChangeNotifier {
 
           step.status = StepStatus.completed;
           step.result = transcript;
-        /*} catch (e) {
+        } catch (e) {
           step.status = StepStatus.failed;
 
           // Handle specific OpenAI errors
@@ -106,14 +114,17 @@ class ProcessService extends ChangeNotifier {
           rethrow;
         }
         */
-      }
-       else {
+      } else {
         //get transcript from database
         transcript = await DatabaseService.getTranscription(meeting.id);
       }
 
       if (transcript == null) {
-        showSnackBar(context, 'Transkrypcja nie powiodła się', MessageType.error);
+        showSnackBar(
+          context,
+          'Transkrypcja nie powiodła się',
+          MessageType.error,
+        );
         throw Exception('Transkrypcja nie powiodła się');
       }
 
@@ -137,7 +148,7 @@ class ProcessService extends ChangeNotifier {
       //update process
       notifyListeners();
       //processes.remove(process);  //TODO: there is a better way to do this
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Don't show additional error notification if it's already handled
       if (!(e is InvalidAPIKeyException || e is InsufficientFundsException)) {
         NotificationService.showNotification(
@@ -146,10 +157,40 @@ class ProcessService extends ChangeNotifier {
           body: 'Nie udało się przetworzyć spotkania: ${e.toString()}',
         );
       }
-      print('Błąd przetwarzania spotkania: $e');
+      print('Błąd przetwarzania spotkania: $e \n$stackTrace');
 
-      showSnackBar(context, 'Błąd przetwarzania spotkania: $e', MessageType.error);
+      showSnackBar(
+        context,
+        'Błąd przetwarzania spotkania: $e',
+        MessageType.error,
+      );
       throw Exception('Błąd przetwarzania spotkania: $e');
+    }
+  }
+
+  Future<String> generateTranscript(String audioPath, String meetingId) async {
+    Process process = getProcess(meetingId, [ProcessType.transcription])!;
+    int index = process.steps.indexWhere(
+      (element) => element.type == ProcessType.transcription,
+    );
+
+    Step step = process.steps[index];
+    step.status = StepStatus.inProgress;
+    try {
+      step.result = await whisper_service.processTranscription(
+        audioPath: audioPath,
+        meetingId: meetingId,
+      );
+
+      if (_betterResults) {
+        step.result = await openai_service.fixTranscript(step.result!, meetingId);
+      }
+
+      step.status = StepStatus.completed;
+      return step.result!;
+    } catch (e) {
+      step.status = StepStatus.failed;
+      throw e;
     }
   }
 
@@ -179,7 +220,17 @@ class ProcessService extends ChangeNotifier {
     Step step = process.steps[index];
     step.status = StepStatus.inProgress;
     try {
-      step.result = await openai_service.actionPoints(transcript, meetingId);
+      if (_betterResults) {
+        List<Future<String>> actionPoints = [
+          openai_service.actionPoints(transcript, meetingId),
+          openai_service.actionPoints(transcript, meetingId),
+          openai_service.actionPoints(transcript, meetingId),
+        ];
+        var results = await Future.wait(actionPoints);
+        step.result = await openai_service.batchTasks(results, meetingId);
+      } else {
+        step.result = await openai_service.actionPoints(transcript, meetingId);
+      }
       step.status = StepStatus.completed;
     } catch (e) {
       step.status = StepStatus.failed;
@@ -266,8 +317,7 @@ class ProcessService extends ChangeNotifier {
         ProcessType.none => 'Przetwarzanie',
       };
 
-      body =
-          '$stepName w toku... ($completedCount/${process.steps.length})';
+      body = '$stepName w toku... ($completedCount/${process.steps.length})';
     }
 
     print('Showing notification - Title: $title, Body: $body');
@@ -296,10 +346,7 @@ class ProcessService extends ChangeNotifier {
     }
   }
 
-  void showSnackBar(
-    BuildContext context,
-    String message,
-    MessageType type) {
+  void showSnackBar(BuildContext context, String message, MessageType type) {
     Color backgroundColor = switch (type) {
       MessageType.success => Theme.of(context).colorScheme.primary,
       MessageType.error => Theme.of(context).colorScheme.error,

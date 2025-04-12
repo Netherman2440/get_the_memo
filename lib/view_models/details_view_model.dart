@@ -1034,23 +1034,35 @@ class DetailsViewModel extends ChangeNotifier {
   Future<void> sendEmailWithMeetingDetails() async {
     final subject = 'Spotkanie: ${meeting?.title ?? "Brak tytułu"}';
     final body = '''
-Szczegóły spotkania:
-Tytuł: ${meeting?.title ?? "Brak tytułu"}
-Opis: ${meeting?.description ?? "Brak opisu"}
+${meeting?.title?.toUpperCase() ?? "BRAK TYTUŁU"}
 
-Podsumowanie:
+${meeting?.description ?? "Brak opisu"}
+
+
+PODSUMOWANIE:
 ${summary ?? "Brak podsumowania"}
 
-Zadania:
-${tasks.isNotEmpty ? tasks.map((task) => "- $task").join("\n") : "Brak zadań"}
 
-Transkrypcja:
+ZADANIA:
+${tasks.isNotEmpty ? tasks.map((task) => '''
+• ${task['title'] ?? 'Brak tytułu'}
+  Przypisane do: ${task['assignee']?.isNotEmpty == true ? task['assignee'] : 'nie przypisano'}
+  Opis: ${task['description']?.isNotEmpty == true ? task['description'] : 'brak opisu'}
+''').join('\n') : "Brak zadań"}
+
+
+TRANSKRYPCJA:
 ${transcript ?? "Brak transkrypcji"}
-''';
+
+
+Wygenerowano automatycznie przez Meet Note''';
 
     final Uri emailLaunchUri = Uri(
       scheme: 'mailto',
-      query: encodeQueryParameters({'subject': subject, 'body': body}),
+      query: encodeQueryParameters({
+        'subject': subject,
+        'body': body,
+      }),
     );
 
     if (await canLaunchUrl(emailLaunchUri)) {

@@ -235,6 +235,21 @@ class HistoryViewModel extends ChangeNotifier {
 
   // Add method to handle process service changes
   void _onProcessServiceChanged() {
+    // Check if any process has completed
+    for (var meeting in _meetings) {
+      var processes = processService.getProcesses(meeting.id);
+      if (processes.isNotEmpty) {
+        // Check if any process has just completed
+        bool hasCompletedProcess = processes.any((process) => 
+          process.steps.every((step) => step.status == StepStatus.completed));
+        
+        if (hasCompletedProcess) {
+          // Reload meeting data to get updated title and description
+          loadMeetings();
+          break;
+        }
+      }
+    }
     notifyListeners();
   }
 }

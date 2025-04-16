@@ -90,113 +90,41 @@ class WhisperService {
   Future<String> processTranscription({
     required String audioPath,
     required String meetingId,
-    int maxFileSizeMB = 20,
     Function(double)? onProgressUpdate,
     bool saveProgress = false,
   }) async {
     try {
       print('Starting transcription process...');
-      final File audioFile = File(audioPath);
-
-      // Check if file exists
-      if (!audioFile.existsSync()) {
-        throw Exception('Audio file not found at path: $audioPath');
-      }
-
-      // Get file size
-      final int fileSizeBytes = await audioFile.length();
-      final int maxFileSizeBytes = maxFileSizeMB * 1024 * 1024;
-
-      // If file is small enough, transcribe directly
-      if (fileSizeBytes <= maxFileSizeBytes) {
-        final transcriptionObj = await transcribeAudio(audioPath);
+      final directory = Directory(audioPath);
       
+      // Get all audio files in the directory
+      final List<FileSystemEntity> files = directory
+          .listSync()
+          .where((file) => file.path.endsWith('.m4a') || file.path.endsWith('.wav'))
+          .toList()
+        ..sort((a, b) => a.path.compareTo(b.path)); // Sort by name to maintain order
 
-        final transcription = jsonDecode(transcriptionObj)['text'];
-        print('Transcription: $transcription');
-        await DatabaseService.insertTranscription(meetingId, transcription);
-        print('Transcription completed directly');
-        return transcription;
+      if (files.isEmpty) {
+        throw Exception('No audio files found in directory: $audioPath');
       }
 
-      // Otherwise, split into chunks
-      print(
-        'File is too large (${fileSizeBytes / 1024 / 1024} MB), splitting into chunks...',
-      );
-
-      // Create temp directory for chunks
-      final outputDir = await getTemporaryDirectory();
-
-      // Determine number of chunks
-      final int numChunks = (fileSizeBytes / maxFileSizeBytes).ceil();
-      print('Splitting into $numChunks chunks...');
-
-      // Get audio duration
-      final player = AudioPlayer();
-      await player.setFilePath(audioPath);
-      final duration = player.duration;
-
-      if (duration == null) {
-        await player.dispose();
-        throw Exception('Could not determine audio duration');
-      }
-
-      final int chunkDurationMs = duration.inMilliseconds ~/ numChunks;
-      final List<File> chunkFiles = [];
-
-      // Create audio chunks
-      for (int i = 0; i < numChunks; i++) {
-        final int startMs = i * chunkDurationMs;
-        final int endMs = min(
-          (i + 1) * chunkDurationMs,
-          duration.inMilliseconds,
-        );
-
-        // Create a new file for this chunk
-        final chunkPath =
-            '${outputDir.path}/chunk_${i.toString().padLeft(3, '0')}.mp3';
-        final chunkFile = File(chunkPath);
-        print('Chunk file path: $chunkPath');
-
-        // Read the bytes from the original file for this segment
-        final RandomAccessFile raf = await audioFile.open(mode: FileMode.read);
-        await raf.setPosition(
-          (startMs / duration.inMilliseconds * fileSizeBytes).round(),
-        );
-        final bytesToRead =
-            ((endMs - startMs) / duration.inMilliseconds * fileSizeBytes)
-                .round();
-        final bytes = await raf.read(bytesToRead);
-        await raf.close();
-
-        // Write the bytes to the chunk file
-        await chunkFile.writeAsBytes(bytes);
-        chunkFiles.add(chunkFile);
-      }
-
-      await player.dispose();
-
-      // Transcribe each chunk
       final allTranscriptions = [];
-
-      for (int i = 0; i < chunkFiles.length; i++) {
-        final chunk = chunkFiles[i];
+      
+      // Process each file
+      for (int i = 0; i < files.length; i++) {
+        final file = files[i];
         try {
-          final transcription = await transcribeAudio(chunk.path);
-          print('Chunk ${chunk.path} transcription completed');
+          final transcription = await transcribeAudio(file.path);
+          print('File ${file.path} transcription completed');
           final transcriptionJson = jsonDecode(transcription);
           allTranscriptions.add(transcriptionJson);
 
           // Update progress
-          final progress = (i + 1) / chunkFiles.length;
+          final progress = (i + 1) / files.length;
           _updateProgress(progress, onProgressUpdate, saveProgress, meetingId);
         } catch (e) {
-          print('Error transcribing chunk ${chunk.path}: $e');
-        } finally {
-          // Clean up chunk after processing
-          if (await chunk.exists()) {
-            await chunk.delete();
-          }
+          print('Error transcribing file ${file.path}: $e');
+          rethrow;
         }
       }
 
@@ -204,15 +132,12 @@ class WhisperService {
       final combinedResult = _combineTranscriptions(allTranscriptions);
       print('Transcription completed successfully');
 
-      //return jsonEncode(combinedResult);
-      //final transcriptionJson = jsonDecode(transcriptionObj!);
       String transcript = combinedResult['text'];
       await DatabaseService.insertTranscription(meetingId, transcript);
       
       return transcript;
     } catch (e) {
       print('Error during transcription: $e');
-
       rethrow;
     }
   }

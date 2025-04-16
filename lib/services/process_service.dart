@@ -178,8 +178,8 @@ class ProcessService extends ChangeNotifier {
     step.status = StepStatus.inProgress;
     try {
       step.result = await whisper_service.processTranscription(
-        audioPath: audioPath,
         meetingId: meetingId,
+        audioPath: audioPath,
       );
 
       if (_betterResults) {

@@ -62,9 +62,9 @@ class AudioService {
   }
 
   // Start recording with optimized settings
-  static Future<void> startRecording(String fileName) async {
+  static Future<void> startRecording(String filePath) async {
     try {
-      print('Start recording'); // Debug log
+      print('Start recording to: $filePath'); // Debug log
       _audioRecorder = AudioRecorder();
       _isPaused = false;
 
@@ -76,22 +76,18 @@ class AudioService {
         }
       }
 
-      final audioDir = await _getAudioDirectory();
-      final filePath = path.join(audioDir, '$fileName.wav');
-      print('Recording to path: $filePath'); // Debug log
-
       await _audioRecorder!.start(
         const RecordConfig(
-          encoder: AudioEncoder.wav,
+          encoder: AudioEncoder.wav, // Using WAV for better quality
           bitRate: 256000,
-          sampleRate: 16000,  // Changed from 44100 to 16000 for Whisper
-          numChannels: 1,     // Changed to mono (1 channel)
+          sampleRate: 16000, // Optimized for Whisper
+          numChannels: 1,    // Mono for Whisper
         ),
         path: filePath,
       );
 
       // Verify recording started
-      if (_audioRecorder != null && !await _audioRecorder!.isRecording()) {
+      if (!await _audioRecorder!.isRecording()) {
         throw AudioServiceException('Failed to start recording');
       }
     } catch (e) {
@@ -105,7 +101,7 @@ class AudioService {
     try {
       print('Pause recording'); // Debug log
       if (_audioRecorder != null) {
-        await _audioRecorder?.pause();
+        await _audioRecorder!.pause();
         _isPaused = true;
       }
     } catch (e) {
@@ -118,7 +114,7 @@ class AudioService {
     try {
       print('Resume recording'); // Debug log
       if (_audioRecorder != null) {
-        await _audioRecorder?.resume();
+        await _audioRecorder!.resume();
         _isPaused = false;
       }
     } catch (e) {
@@ -134,66 +130,29 @@ class AudioService {
         throw AudioServiceException('Recorder not initialized');
       }
 
-      // Allow stopping even if paused
-      if (!await _audioRecorder!.isRecording() && !_isPaused) {
-        throw AudioServiceException('Not currently recording or paused');
-      }
-
-      final recordedPath = await _audioRecorder?.stop();
-      print('Recorded path: $recordedPath'); // Debug log
+      final path = await _audioRecorder!.stop();
+      print('Recording stopped, path: $path'); // Debug log
 
       // Reset state
       _audioRecorder = null;
       _isPaused = false;
 
-      if (recordedPath == null) {
-        throw AudioServiceException('Recording failed: no file path returned');
-      }
-
-      // Verify file exists and has content
-      final file = File(recordedPath);
-      if (!await file.exists()) {
-        print('File does not exist at path: $recordedPath'); // Debug log
-        throw AudioServiceException(
-          'Recording failed: file not found at $recordedPath',
-        );
-      }
-
-      final fileSize = await file.length();
-      print('File size: $fileSize bytes'); // Debug log
-      if (fileSize == 0) {
-        await file.delete();
-        throw AudioServiceException('Recording failed: file is empty');
-      }
-
-      // Ensure file is in our audio directory
-      final audioDir = await _getAudioDirectory();
-      final fileName = path.basename(recordedPath);
-      final finalPath = path.join(audioDir, fileName);
-
-      if (recordedPath != finalPath) {
-        final newFile = await File(recordedPath).copy(finalPath);
-        await File(recordedPath).delete();
-        return newFile.path;
-      }
-
-      return recordedPath;
+      return path;
     } catch (e) {
-      // Reset state on error
+      print('Error stopping recording: $e'); // Debug log
       _audioRecorder = null;
       _isPaused = false;
       throw AudioServiceException('Failed to stop recording: $e');
     }
   }
 
-  // Check if currently recording or paused
-  static Future<bool> isRecordingOrPaused() async {
-    return (_audioRecorder != null &&
-        (await _audioRecorder!.isRecording() || _isPaused));
+  // Check if currently recording
+  static Future<bool> isRecording() async {
+    return _audioRecorder?.isRecording() ?? false;
   }
 
   // Check if recording is paused
-  static Future<bool> isPaused() async {
+  static bool isPaused() {
     return _isPaused;
   }
 

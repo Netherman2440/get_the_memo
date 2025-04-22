@@ -4,6 +4,8 @@ import 'package:get_the_memo/models/meeting.dart';
 import 'package:get_the_memo/services/database_service.dart';
 import 'package:get_the_memo/services/process_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
+import 'package:get_the_memo/services/notification_service.dart';
 
 class DetailsViewModel extends ChangeNotifier {
   Meeting? meeting;
@@ -340,6 +342,12 @@ class DetailsViewModel extends ChangeNotifier {
                     'Transkrypcja',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 16),
+                    onPressed: () => copyTranscript(context),
+                    tooltip: 'Copy transcription',
+                  ),
                   if (transcriptionStatus == StepStatus.inProgress)
                     Padding(
                       padding: const EdgeInsets.only(left: 8.0),
@@ -521,6 +529,12 @@ class DetailsViewModel extends ChangeNotifier {
                     'Podsumowanie',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                   ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 16),
+                    onPressed: () => copySummary(context),
+                    tooltip: 'Copy summary',
+                  ),
                   if (summaryStatus == StepStatus.inProgress)
                     Padding(
                       padding: const EdgeInsets.only(left: 8.0),
@@ -701,6 +715,12 @@ class DetailsViewModel extends ChangeNotifier {
                   Text(
                     'Zadania',
                     style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 16),
+                    onPressed: () => copyActionPoints(context),
+                    tooltip: 'Copy action points',
                   ),
                   if (tasksStatus == StepStatus.inProgress)
                     Padding(
@@ -1159,6 +1179,55 @@ Wygenerowano automatycznie przez Meet Note''';
       editingActionPointIndex = null;
       notifyListeners();
     }
+  }
+
+  // Add these helper methods to get formatted text for copying
+  String getTranscriptText() {
+    return transcript ?? '';
+  }
+
+  String getSummaryText() {
+    return summary ?? '';
+  }
+
+  String getActionPointsText() {
+    if (tasks.isEmpty) return '';
+    
+    return tasks.map((task) => '''
+• ${task['title'] ?? 'No title'}
+  Assigned to: ${task['assignee']?.isNotEmpty == true ? task['assignee'] : 'not assigned'}
+  Description: ${task['description']?.isNotEmpty == true ? task['description'] : 'no description'}''').join('\n');
+  }
+
+  // Update showSnackBar method with shorter duration
+  void showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(milliseconds: 1000), // 1 second
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+
+  // Update copy methods with shorter messages
+  Future<void> copyTranscript(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: getTranscriptText()));
+    showSnackBar(context, 'Transcription copied!');
+  }
+
+  Future<void> copySummary(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: getSummaryText()));
+    showSnackBar(context, 'Summary copied!');
+  }
+
+  Future<void> copyActionPoints(BuildContext context) async {
+    await Clipboard.setData(ClipboardData(text: getActionPointsText()));
+    showSnackBar(context, 'Action points copied!');
   }
 }
 
